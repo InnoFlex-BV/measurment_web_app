@@ -1,0 +1,92 @@
+/**
+ * Styles for the main App component and overall layout
+ */
+
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header styles */
+.app-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: var(--spacing-md) 0;
+    box-shadow: var(--shadow-md);
+}
+
+.app-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.app-title a {
+    color: white;
+    text-decoration: none;
+}
+
+.app-title a:hover {
+    text-decoration: none;
+    opacity: 0.9;
+}
+
+/* Navigation styles */
+.app-nav {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    transition: background-color 0.2s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+}
+
+/* Main content area */
+.app-main {
+    flex: 1;
+    padding: var(--spacing-xl) 0;
+}
+
+/* Container for consistent max-width and centering */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+}
+
+/* Footer styles */
+.app-footer {
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    padding: var(--spacing-lg) 0;
+    text-align: center;
+    color: var(--text-secondary);
+    margin-top: auto;
+}
+
+/* 404 page styles */
+.not-found {
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.not-found h2 {
+    color: var(--error-color);
+    margin-bottom: var(--spacing-md);
+}
