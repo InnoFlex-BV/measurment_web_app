@@ -1,20 +1,20 @@
 services:
-  # PostgreSQL database service - the persistent data store for all experiment data
   postgres:
-    # Using PostgreSQL 15 - a specific version rather than 'latest' ensures reproducibility
     image: postgres:15
-    
-    # Container name makes it easy to identify when using docker ps
     container_name: lab_postgres
+      
+    # Use env_file to load variables from .env
+    # This makes all variables available to the container
+    env_file:
+      - .env
     
     # Environment variables configure the database at startup
     environment:
-      # Superuser credentials - in production these would come from secrets management
-      # TODO: move to secrets file
-      POSTGRES_USER: labuser
-      POSTGRES_PASSWORD: labpassword
-      # Initial database name - PostgreSQL will create this on first startup
-      POSTGRES_DB: labdata
+      # PostgreSQL initialization variables
+      # These are read by the PostgreSQL Docker image's entrypoint script
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     
     # Volumes provide persistent storage and initialization scripts
     volumes:
@@ -27,32 +27,23 @@ services:
     # Port mapping exposes PostgreSQL to the host for development access
     # Format is "host_port:container_port"
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
     
     # Health check ensures the database is actually ready to accept connections
     # Other services can wait for this before starting
     healthcheck:
       # pg_isready is a PostgreSQL utility specifically for checking readiness
-      # TODO: use values from secrets file
-      test: ["CMD-SHELL", "pg_isready -U labuser -d labdata"]
-      # Check every 5 seconds
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
-      # Wait 5 seconds for the check to complete
       timeout: 5s
-      # Try 5 times before marking as unhealthy
       retries: 5
     
-    # Networks this service connects to (will be defined below)
     networks:
       - lab_network
 
-  # Backend API service - FastAPI application handling business logic
   backend:
-    # Build from local Dockerfile rather than using pre-made image
     build:
-      # Context is the directory containing files needed for the build
       context: ./backend
-      # Dockerfile name (could be omitted if using default 'Dockerfile')
       dockerfile: Dockerfile
     
     container_name: lab_backend
@@ -61,14 +52,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+        
+    env_file:
+      - .env
     
     # Environment variables for database connection and app configuration
     environment:
       # Database connection string - SQLAlchemy will use this
       # Format: postgresql://username:password@host:port/database
-      # TODO: use values from secrets file
-      DATABASE_URL: postgresql://labuser:labpassword@postgres:5432/labdata
-      # Note: 'postgres' is the service name, which acts as hostname in Docker network
+      DATABASE_URL: ${DATABASE_URL}
       
       # Python unbuffered mode ensures logs appear immediately
       PYTHONUNBUFFERED: 1
@@ -80,7 +72,7 @@ services:
     
     # Expose FastAPI server to host machine
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT}:8000"
     
     # Override default command to run development server with auto-reload
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -100,10 +92,13 @@ services:
     depends_on:
       - backend
     
+    env_file:
+      - .env
+    
     environment:
       # Tell React where the backend API is located
       # In development, this goes through the host since browser makes the request
-      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
       
       # Disable React's browser opening behavior in container
       BROWSER: none
@@ -119,7 +114,7 @@ services:
       - /app/node_modules
     
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT}:3000"
     
     # Start React development server
     command: npm start

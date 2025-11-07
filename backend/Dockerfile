@@ -1,6 +1,6 @@
-# Use Python 3.11 slim image as base
+# Use Python 3.13 slim image as base
 # Slim variant provides good balance between size and functionality
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Set working directory inside the container
 # All subsequent commands execute from this directory

@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from app.config import settings
 from app.database import engine, Base
 from app.routers import experiment_types, experiments, measurements
 
@@ -30,7 +31,7 @@ async def lifespan(app: FastAPI):
     # In production, you'd use Alembic migrations instead
     # Base.metadata.create_all(bind=engine)
 
-    print("Application startup complete")
+    print(f"Starting application in {settings.ENVIRONMENT} mode")
     yield
     # Shutdown: Clean up resources
     print("Application shutdown")

@@ -1,22 +1,22 @@
 # Web framework and server
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+fastapi==0.120.1
+uvicorn[standard]==0.38.0
 
 # Database and ORM
-sqlalchemy==2.0.23
+sqlalchemy==2.0.44
 psycopg2-binary==2.9.11 #TODO: compile from source for production
 
 # Data validation and serialization
-pydantic==2.5.0
-pydantic-settings==2.1.0
+pydantic==2.12.3
+pydantic-settings==2.11.0
 
 # Authentication and security (for future use)
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
+# python-jose[cryptography]==3.3.0
+# passlib[bcrypt]==1.7.4
+# python-multipart==0.0.6
 
 # Environment variables
-python-dotenv==1.0.0
+python-dotenv==1.2.1
 
 # Email validation
-email-validator==2.1.0
+email-validator==2.3.0

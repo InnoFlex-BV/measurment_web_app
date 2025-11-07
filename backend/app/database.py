@@ -9,15 +9,12 @@ to interact with the database.
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
+from app.config import settings
 
 # Get database URL from environment variable
 # This keeps credentials out of source code and allows easy configuration
 # Format: postgresql://username:password@host:port/database
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://labuser:labpassword@postgres:5432/labdata" # TODO: move to secrets file (probably)
-)
+DATABASE_URL = settings.DATABASE_URL
 
 # Create the SQLAlchemy engine
 # The engine manages database connections and connection pooling
@@ -31,7 +28,7 @@ engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
     # Uncomment the next line to see all generated SQL queries (useful for learning/debugging)
-    # echo=True,
+    #echo=settings.is_development,
 )
 
 # Create a SessionLocal factory
