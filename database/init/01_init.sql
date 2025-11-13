@@ -1,12 +1,31 @@
 create table users (
     id serial primary key,
-    username varchar(255) unique not null,
+    username varchar(100) unique not null,
     full_name varchar(100) not null,
     email varchar(255) unique not null,
     is_active boolean not null default true,
     updated_at timestamp with time zone default current_timestamp not null,
     created_at timestamp with time zone default current_timestamp not null
 );
+
+-- index on email for fast login lookups
+create index idx_users_email on users(email);
+
+-- index on username for user search functionality
+create index idx_users_username on users(username);
+
+
+create table waveforms (
+    id serial primary key,
+    name varchar(255) not null,
+    ac_frequency numeric(10,4),
+    ac_duty_cycle numeric(10,4),
+    pulsing_frequency numeric(10,4),
+    pulsing_duty_cycle numeric(10,4),
+    updated_at timestamp with time zone default current_timestamp not null,
+    created_at timestamp with time zone default current_timestamp not null
+);
+
 
 create table files (
     id serial primary key,
@@ -46,6 +65,15 @@ create table analyzers (
     created_at timestamp with time zone default current_timestamp not null
 );
 
+create table methods (
+     id serial primary key,
+     descriptive_name varchar(255) not null,
+     procedure text not null,
+     updated_at timestamp with time zone default current_timestamp not null,
+     created_at timestamp with time zone default current_timestamp not null,
+     is_active boolean not null default true
+);
+
 create table catalysts (
     id serial primary key,
     name varchar(255) not null,
@@ -67,16 +95,6 @@ create table supports (
     
 );
 
-create table methods (
-    id serial primary key,
-    descriptive_name varchar(255) not null,
-    procedure text not null,
-    updated_at timestamp with time zone default current_timestamp not null,
-    created_at timestamp with time zone default current_timestamp not null,
-    is_active boolean not null default true
-    
-);
-
 create table samples (
     id serial primary key,
     name varchar(255),
@@ -92,26 +110,13 @@ create table samples (
     
 );
 
--- index on email for fast login lookups
--- indexes dramatically speed up where clauses on indexed columns
--- the unique constraint already creates an index, but being explicit is clear
-create index idx_users_email on users(email);
-
--- index on username for user search functionality
-create index idx_users_username on users(username);
-
 create table chemicals (
     id serial primary key,
-    name varchar(255) not null unique,
+    name varchar(50) not null unique,
     updated_at timestamp with time zone default current_timestamp not null,
     created_at timestamp with time zone default current_timestamp not null
 );
 
-create table chemical_method (
-    method_id integer not null references methods(id) on delete cascade,
-    chemical_id integer not null references chemicals(id) on delete cascade,
-    primary key(method_id, chemical_id)
-);
 
 create table characterizations (
     id serial primary key,
@@ -121,18 +126,6 @@ create table characterizations (
     raw_data integer references files(id) on delete set null,
     updated_at timestamp with time zone default current_timestamp not null,
     created_at timestamp with time zone default current_timestamp not null
-);
-
-create table catalyst_characterization (
-    catalyst_id integer not null references catalysts(id) on delete cascade,
-    characterization_id integer not null references characterizations(id) on delete cascade,
-    primary key(catalyst_id, characterization_id)
-);
-
-create table sample_characterization (
-    sample_id integer not null references samples(id) on delete cascade,
-    characterization_id integer not null references characterizations(id) on delete cascade,
-    primary key(sample_id, characterization_id)
 );
 
 create table experiments (
@@ -167,79 +160,6 @@ create table observations (
     created_at timestamp with time zone default current_timestamp not null
 );
 
-create table user_catalyst (
-   user_id integer not null references users(id) on delete cascade,
-   catalyst_id integer not null references catalysts(id) on delete cascade,
-   changed_at timestamp with time zone default current_timestamp not null,
-   primary key(user_id, catalyst_id)
-);
-
-create table user_sample (
-   user_id integer not null references users(id) on delete cascade,
-   sample_id integer not null references samples(id) on delete cascade,
-   changed_at timestamp with time zone default current_timestamp not null,
-   primary key(user_id, sample_id)
-);
-
-create table user_experiment (
-   user_id integer not null references users(id) on delete cascade,
-   experiment_id integer not null references experiments(id) on delete cascade,
-   changed_at timestamp with time zone default current_timestamp not null,
-   primary key(user_id, experiment_id)
-);
-
-create table user_characterization (
-   user_id integer not null references users(id) on delete cascade,
-   characterization_id integer not null references characterizations(id) on delete cascade,
-   changed_at timestamp with time zone default current_timestamp not null,
-   primary key(user_id, characterization_id)
-);
-
-create table user_observation (
-   user_id integer not null references users(id) on delete cascade,
-   observation_id integer not null references observations(id) on delete cascade,
-   changed_at timestamp with time zone default current_timestamp not null,
-   primary key(user_id, observation_id)
-);
-
-create table user_method (
-   id serial primary key,
-   user_id integer not null references users(id) on delete cascade,
-   method_id integer not null references methods(id) on delete cascade,
-   changed_at timestamp with time zone default current_timestamp not null,
-   change_notes text
-);
-
-create table catalyst_catalyst (
-    input_catalyst_id integer not null references catalysts(id) on delete cascade,
-    output_catalyst_id integer not null references catalysts(id) on delete cascade,
-    primary key(input_catalyst_id, output_catalyst_id)
-);
-
-create table sample_experiment (
-    sample_id integer not null references samples(id) on delete cascade,
-    experiment_id integer not null references experiments(id) on delete cascade,
-    primary key(sample_id, experiment_id)
-);
-
-create table catalyst_observation (
-    catalyst_id integer not null references catalysts(id) on delete cascade,
-    observation_id integer not null references observations(id) on delete cascade,
-    primary key(catalyst_id, observation_id)
-);
-
-create table sample_observation (
-    sample_id integer not null references samples(id) on delete cascade,
-    observation_id integer not null references observations(id) on delete cascade,
-    primary key(sample_id, observation_id)
-);
-
-create table observation_file (
-    observation_id integer not null references observations(id) on delete cascade,
-    file_id integer not null references files(id) on delete cascade,
-    primary key(observation_id, file_id)
-);
-
 create table misc (
     experiment_id integer primary key references experiments(id) on delete cascade,
     description text
@@ -272,34 +192,9 @@ create table contaminants (
     created_at timestamp with time zone default current_timestamp not null
 );
 
-create table contaminant_experiment (
-    contaminant_id integer not null references contaminants(id) on delete cascade,
-    experiment_id integer not null references experiments(id) on delete cascade,
-    ppm numeric(10,4),
-    primary key(contaminant_id, experiment_id)
-);
-
-create table carrier_experiment (
-    carrier_id integer not null references carriers(id) on delete cascade,
-    experiment_id integer not null references experiments(id) on delete cascade,
-    ratio numeric(10,4),
-    primary key(carrier_id, experiment_id)
-);
-
 create table carriers (
     id serial primary key,
     name varchar(255) not null,
-    updated_at timestamp with time zone default current_timestamp not null,
-    created_at timestamp with time zone default current_timestamp not null
-);
-
-create table waveforms (
-    id serial primary key,
-    name varchar(255) not null,
-    ac_frequency numeric(10,4),
-    ac_duty_cycle numeric(10,4),
-    pulsing_frequency numeric(10,4),
-    pulsing_duty_cycle numeric(10,4),
     updated_at timestamp with time zone default current_timestamp not null,
     created_at timestamp with time zone default current_timestamp not null
 );
@@ -315,12 +210,6 @@ create table groups (
     created_at timestamp with time zone default current_timestamp not null
 );
 
-create table group_experiment (
-   group_id integer not null references groups(id) on delete cascade,
-   experiment_id integer not null references experiments(id) on delete cascade,
-   primary key(group_id, experiment_id)
-);
-
 create table ftir (
    id integer primary key references analyzers(id) on delete cascade,
    path_length numeric(10,4),
@@ -333,6 +222,117 @@ create table oes (
    id integer primary key references analyzers(id) on delete cascade,
    integration_time integer,
    scans integer
+);
+
+create table chemical_method (
+    method_id integer not null references methods(id) on delete cascade,
+    chemical_id integer not null references chemicals(id) on delete cascade,
+    primary key(method_id, chemical_id)
+);
+
+create table catalyst_characterization (
+    catalyst_id integer not null references catalysts(id) on delete cascade,
+    characterization_id integer not null references characterizations(id) on delete cascade,
+    primary key(catalyst_id, characterization_id)
+);
+
+create table sample_characterization (
+    sample_id integer not null references samples(id) on delete cascade,
+    characterization_id integer not null references characterizations(id) on delete cascade,
+    primary key(sample_id, characterization_id)
+);
+
+create table user_catalyst (
+    user_id integer not null references users(id) on delete cascade,
+    catalyst_id integer not null references catalysts(id) on delete cascade,
+    changed_at timestamp with time zone default current_timestamp not null,
+    primary key(user_id, catalyst_id)
+);
+
+create table user_sample (
+    user_id integer not null references users(id) on delete cascade,
+    sample_id integer not null references samples(id) on delete cascade,
+    changed_at timestamp with time zone default current_timestamp not null,
+    primary key(user_id, sample_id)
+);
+
+create table user_experiment (
+    user_id integer not null references users(id) on delete cascade,
+    experiment_id integer not null references experiments(id) on delete cascade,
+    changed_at timestamp with time zone default current_timestamp not null,
+    primary key(user_id, experiment_id)
+);
+
+create table user_characterization (
+    user_id integer not null references users(id) on delete cascade,
+    characterization_id integer not null references characterizations(id) on delete cascade,
+    changed_at timestamp with time zone default current_timestamp not null,
+    primary key(user_id, characterization_id)
+);
+
+create table user_observation (
+    user_id integer not null references users(id) on delete cascade,
+    observation_id integer not null references observations(id) on delete cascade,
+    changed_at timestamp with time zone default current_timestamp not null,
+    primary key(user_id, observation_id)
+);
+
+create table user_method (
+    id serial primary key,
+    user_id integer not null references users(id) on delete cascade,
+    method_id integer not null references methods(id) on delete cascade,
+    changed_at timestamp with time zone default current_timestamp not null,
+    change_notes text
+);
+
+create table catalyst_catalyst (
+   input_catalyst_id integer not null references catalysts(id) on delete cascade,
+   output_catalyst_id integer not null references catalysts(id) on delete cascade,
+   primary key(input_catalyst_id, output_catalyst_id)
+);
+
+create table sample_experiment (
+   sample_id integer not null references samples(id) on delete cascade,
+   experiment_id integer not null references experiments(id) on delete cascade,
+   primary key(sample_id, experiment_id)
+);
+
+create table catalyst_observation (
+    catalyst_id integer not null references catalysts(id) on delete cascade,
+    observation_id integer not null references observations(id) on delete cascade,
+    primary key(catalyst_id, observation_id)
+);
+
+create table sample_observation (
+    sample_id integer not null references samples(id) on delete cascade,
+    observation_id integer not null references observations(id) on delete cascade,
+    primary key(sample_id, observation_id)
+);
+
+create table observation_file (
+    observation_id integer not null references observations(id) on delete cascade,
+    file_id integer not null references files(id) on delete cascade,
+    primary key(observation_id, file_id)
+);
+
+create table group_experiment (
+    group_id integer not null references groups(id) on delete cascade,
+    experiment_id integer not null references experiments(id) on delete cascade,
+    primary key(group_id, experiment_id)
+);
+
+create table contaminant_experiment (
+    contaminant_id integer not null references contaminants(id) on delete cascade,
+    experiment_id integer not null references experiments(id) on delete cascade,
+    ppm numeric(10,4),
+    primary key(contaminant_id, experiment_id)
+);
+
+create table carrier_experiment (
+    carrier_id integer not null references carriers(id) on delete cascade,
+    experiment_id integer not null references experiments(id) on delete cascade,
+    ratio numeric(10,4),
+    primary key(carrier_id, experiment_id)
 );
 
 -- function to automatically update the updated_at timestamp
@@ -426,4 +426,4 @@ create trigger update_observations_updated_at
 
 -- insert some initial data for testing
 insert into users (username, full_name, email) values 
-    ('admin', 'admin', 'admin@lab.local');
+    ('admin', 'admin', 'admin@gmail.com');

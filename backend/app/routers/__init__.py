@@ -1,8 +1,22 @@
 """
-API route handlers.
+API routers organized by domain.
 
-This package contains all the API endpoint definitions organized by domain.
-Each router module defines endpoints for a specific entity or feature area.
+Routers are grouped into subdirectories matching the models and schemas
+organization for consistency and maintainability.
 """
 
-# This file can be empty but makes routers a proper package
+from app.routers.core import users_router
+from app.routers.catalysts import (
+    chemicals_router,
+    methods_router,
+    supports_router,
+    catalysts_router
+)
+
+__all__ = [
+    "users_router",
+    "chemicals_router",
+    "methods_router",
+    "supports_router",
+    "catalysts_router",
+]
