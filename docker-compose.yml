@@ -96,15 +96,13 @@ services:
       - .env
     
     environment:
-      # Tell React where the backend API is located
-      # In development, this goes through the host since browser makes the request
-      REACT_APP_API_URL: ${REACT_APP_API_URL}
+      # Vite uses VITE_ prefix for environment variables exposed to the client
+      # In our client.ts, we hardcoded the API URL for now, but this allows
+      # configuration through environment variables in the future
+      VITE_API_BASE_URL: ${REACT_APP_API_URL:-http://localhost:8000}
       
-      # Disable React's browser opening behavior in container
-      BROWSER: none
-      
-      # Enable fast refresh for better development experience
-      FAST_REFRESH: true
+      # Node environment
+      NODE_ENV: development
     
     volumes:
       # Mount source code for hot module replacement
@@ -114,10 +112,11 @@ services:
       - /app/node_modules
     
     ports:
-      - "${FRONTEND_PORT}:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     
-    # Start React development server
-    command: npm start
+    # Start Vite development server
+    # This overrides the CMD in Dockerfile
+    command: npm run dev
     
     networks:
       - lab_network

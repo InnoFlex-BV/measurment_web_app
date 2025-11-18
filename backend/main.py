@@ -1,7 +1,3 @@
-"""
-Main FastAPI application entry point.
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -29,6 +25,7 @@ async def lifespan(app: FastAPI):
     Lifespan context manager for startup and shutdown events.
     """
     print(f"Starting application in {settings.ENVIRONMENT} mode")
+    print(f"Allowed CORS origins: {settings.CORS_ORIGINS}")  # Add this line to verify CORS config
     yield
     print("Application shutdown")
 
@@ -42,10 +39,11 @@ app = FastAPI(
 )
 
 
-# Configure CORS middleware
+# Configure CORS middleware - IMPORTANT: This must come BEFORE route definitions
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+#     allow_origins=settings.CORS_ORIGINS, TODO: IMPORTANT fix this to specify CORS_ORIGINS properly
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

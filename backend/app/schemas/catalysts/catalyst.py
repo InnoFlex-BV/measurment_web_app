@@ -152,14 +152,43 @@ class CatalystUpdate(BaseModel):
     input_catalyst_ids: Optional[List[int]] = Field(None)
 
 
+class CatalystSimple(BaseModel):
+    """
+    Simplified catalyst schema for nested representations.
+    
+    This schema is used when catalysts appear nested within other catalysts
+    (in input_catalysts or output_catalysts relationships) to prevent
+    infinite recursion. It includes only the core identifying information
+    without recursive relationships.
+    
+    **Why This Is Necessary:**
+    Self-referential relationships create potential for infinite loops during
+    serialization. If Catalyst A includes its input_catalysts, and one of
+    those includes its output_catalysts (which includes A), you get:
+    A → input B → output A → input B → ... forever
+    
+    Using a simplified schema for nested catalysts breaks this cycle.
+    """
+
+    id: int = Field(..., description="Unique identifier")
+    name: str = Field(..., description="Catalyst name")
+    method_id: Optional[int] = Field(None, description="Method used to create this catalyst")
+    yield_amount: Decimal = Field(..., description="Original yield")
+    remaining_amount: Decimal = Field(..., description="Current remaining amount")
+    storage_location: str = Field(..., description="Where this catalyst is stored")
+    created_at: datetime = Field(..., description="When synthesized")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CatalystResponse(CatalystBase):
     """
     Schema for catalyst data returned by the API.
     
-    This can include nested related data like the method object,
-    input catalysts, characterizations, and observations. Whether
-    these relationships are populated depends on query parameters
-    that control the level of detail returned.
+    This can include nested related data like the method object and
+    relationships to other catalysts. To prevent recursion loops in
+    self-referential relationships, nested catalysts use CatalystSimple
+    which doesn't include further nested relationships.
     """
 
     id: int = Field(..., description="Unique identifier")
@@ -171,22 +200,24 @@ class CatalystResponse(CatalystBase):
     updated_at: datetime = Field(..., description="When this record was last modified")
 
     # Optional nested relationships
-    # These are populated based on request parameters like ?include=method,characterizations
-    # Using forward references (strings) to avoid circular imports
+    # These are populated based on request parameters like ?include=method,input_catalysts
 
     method: Optional["MethodResponse"] = Field(
         None,
         description="Complete method object (included when requested)"
     )
 
-    input_catalysts: Optional[List["CatalystResponse"]] = Field(
+    # Use CatalystSimple for nested catalysts to prevent infinite recursion
+    # When you request include=input_catalysts, you get simplified representations
+    # that don't themselves include input/output relationships
+    input_catalysts: Optional[List[CatalystSimple]] = Field(
         None,
-        description="Catalysts used as inputs to create this one"
+        description="Catalysts used as inputs to create this one (simplified to prevent recursion)"
     )
 
-    output_catalysts: Optional[List["CatalystResponse"]] = Field(
+    output_catalysts: Optional[List[CatalystSimple]] = Field(
         None,
-        description="Catalysts created using this one as input"
+        description="Catalysts created using this one as input (simplified to prevent recursion)"
     )
 
     # We'll add characterizations and observations relationships in Phase 2

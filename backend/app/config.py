@@ -13,6 +13,9 @@ like pydantic-settings which provides validation and type conversion.
 
 import os
 from typing import Optional
+from pydantic_settings import BaseSettings
+from pydantic import Field
+from typing import List
 
 
 class Settings:

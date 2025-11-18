@@ -1,33 +1,20 @@
-# Use Node.js 18 LTS as the base image
-# Node 18 is the current LTS (Long Term Support) release with excellent stability
-# The 'alpine' variant is a minimal Linux distribution that keeps image size small
-FROM node:18-alpine
+# Use Node.js LTS version
+FROM node:20-alpine
 
-# Set the working directory where all commands will execute
+# Set working directory
 WORKDIR /app
 
-# Copy package files first for better layer caching
-# These files change less frequently than source code
-# By copying them first, we can cache the npm install layer
-COPY package.json package-lock.json ./
+# Copy package files
+COPY package*.json ./
 
 # Install dependencies
-# npm ci is preferred over npm install for CI/CD and containers because:
-# - It's faster (sometimes 2-3x) especially with a clean slate
-# - It strictly follows package-lock.json versions
-# - It fails if package.json and package-lock.json are out of sync
-# - It automatically removes node_modules before installing
-RUN npm ci
+RUN npm install
 
-# Copy the rest of the application code
-# This layer rebuilds whenever any source file changes
+# Copy the rest of the application
 COPY . .
 
-# Expose port 3000 where React development server runs
-# This is documentation and doesn't actually publish the port
+# Expose port 3000 for the development server
 EXPOSE 3000
 
-# Start the React development server
-# The development server provides hot module replacement
-# Changes to source files trigger automatic reloading
-CMD ["npm", "start"]
+# Start the development server
+CMD ["npm", "run", "dev"]
