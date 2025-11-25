@@ -1,29 +1,27 @@
 """
 Support API router.
 
-Supports are substrate materials that catalysts can be applied to or combined
-with. This router is relatively straightforward in Phase One because the main
-relationships (to samples) will be implemented in Phase Two.
+Supports represent substrate materials for catalysts (alumina, silica, etc.).
+This router provides CRUD operations for managing support materials.
 
-The router demonstrates:
-- Managing simple reference data with descriptive documentation
-- Preparing for future relationship inclusion
-- Standard CRUD patterns for entities with minimal business logic
-
-TODO: Phase Two enhancements when Sample model is implemented:
-- Add samples relationship to SupportsResponse schema
-- Implement include=samples parameter for listing samples on each support
-- Add usage statistics showing how many samples use each support
-- Add validation preventing deletion of supports used by active samples
+Endpoint Summary:
+- GET    /api/supports/           List with filtering
+- POST   /api/supports/           Create new support
+- GET    /api/supports/{id}       Get details
+- PATCH  /api/supports/{id}       Update
+- DELETE /api/supports/{id}       Delete (fails if in use)
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 
 from app.database import get_db
 from app.models.catalysts.support import Support
-from app.schemas.catalysts.support import SupportCreate, SupportUpdate, SupportResponse
+from app.schemas.catalysts.support import (
+    SupportCreate, SupportUpdate, SupportResponse
+)
 
 router = APIRouter(
     prefix="/api/supports",
@@ -35,35 +33,16 @@ router = APIRouter(
 def list_supports(
         skip: int = Query(0, ge=0),
         limit: int = Query(100, ge=1, le=1000),
-        search: Optional[str] = Query(None, description="Search in support names and descriptions"),
+        search: Optional[str] = Query(None, description="Search in name and description"),
+        include: Optional[str] = Query(None, description="Relationships: samples"),
         db: Session = Depends(get_db)
 ):
     """
-    List all supports with optional search and pagination.
-    
-    Supports are ordered alphabetically because researchers think of them
-    by material type. When preparing a sample, you might search for "alumina"
-    or "silica" to find the appropriate support, making alphabetical order
-    most intuitive.
-    
-    TODO: Add include parameter for Phase Two sample relationships
-    When samples are implemented, add: include=samples to show all samples
-    using each support. The pattern will match the method router's chemicals
-    inclusion.
-    
-    Args:
-        skip: Pagination offset
-        limit: Page size
-        search: Text to match in names and descriptions
-        db: Database session
-    
-    Returns:
-        List[SupportResponse]: Supports matching search criteria
+    List supports with search and relationship inclusion.
     """
 
     query = db.query(Support)
 
-    # Search across both name and description fields
     if search:
         search_pattern = f"%{search}%"
         query = query.filter(
@@ -71,38 +50,30 @@ def list_supports(
             (Support.description.ilike(search_pattern))
         )
 
-    # Alphabetical ordering for easy scanning
-    query = query.order_by(Support.descriptive_name.asc())
+    if include and 'samples' in include:
+        query = query.options(joinedload(Support.samples))
 
-    supports = query.offset(skip).limit(limit).all()
+    query = query.order_by(Support.descriptive_name)
 
-    return supports
+    return query.offset(skip).limit(limit).all()
 
 
 @router.get("/{support_id}", response_model=SupportResponse)
 def get_support(
         support_id: int,
+        include: Optional[str] = Query(None),
         db: Session = Depends(get_db)
 ):
     """
     Retrieve a single support by ID.
-    
-    TODO: Add include parameter in Phase Two
-    GET /api/supports/1?include=samples will load sample relationships
-    showing all samples created using this support material.
-    
-    Args:
-        support_id: The support's unique identifier
-        db: Database session
-    
-    Returns:
-        SupportResponse: The requested support
-    
-    Raises:
-        HTTPException(404): If support not found
     """
 
-    support = db.query(Support).filter(Support.id == support_id).first()
+    query = db.query(Support)
+
+    if include and 'samples' in include:
+        query = query.options(joinedload(Support.samples))
+
+    support = query.filter(Support.id == support_id).first()
 
     if support is None:
         raise HTTPException(
@@ -121,39 +92,31 @@ def create_support(
     """
     Create a new support material.
     
-    **Uniqueness on Descriptive Name:**
-    The descriptive_name must be unique to prevent confusion between support
-    materials. Different support materials should have distinguishable names
-    even if they're the same base material with different specifications.
-    For example, "γ-Alumina 200 m²/g" and "γ-Alumina 300 m²/g" are different
-    supports.
-    
-    Args:
-        support: Support data validated by SupportCreate schema
-        db: Database session
-    
-    Returns:
-        SupportResponse: The created support
-    
-    Raises:
-        HTTPException(400): If a support with this name already exists
+    Support names (descriptive_name) must be unique.
     """
 
-    # Check for existing support with the same name
+    # Check for duplicate name
     existing = db.query(Support).filter(
         Support.descriptive_name == support.descriptive_name
     ).first()
-
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"A support named '{support.descriptive_name}' already exists"
+            detail=f"Support with name '{support.descriptive_name}' already exists"
         )
 
     db_support = Support(**support.model_dump())
     db.add(db_support)
-    db.commit()
-    db.refresh(db_support)
+
+    try:
+        db.commit()
+        db.refresh(db_support)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Support with this name already exists"
+        )
 
     return db_support
 
@@ -165,24 +128,7 @@ def update_support(
         db: Session = Depends(get_db)
 ):
     """
-    Update a support material.
-    
-    Similar to chemicals, updating a support's name affects all samples that
-    reference it. For historical accuracy, creating a new support and migrating
-    samples to it might be preferable to renaming an existing support that's
-    been used in published research.
-    
-    Args:
-        support_id: ID of support to update
-        support_update: Fields to update
-        db: Database session
-    
-    Returns:
-        SupportResponse: The updated support
-    
-    Raises:
-        HTTPException(404): If support not found
-        HTTPException(400): If name update would create duplicate
+    Update a support with partial data.
     """
 
     db_support = db.query(Support).filter(Support.id == support_id).first()
@@ -195,17 +141,16 @@ def update_support(
 
     update_data = support_update.model_dump(exclude_unset=True)
 
-    # Check name uniqueness if being updated
-    if 'descriptive_name' in update_data and update_data['descriptive_name'] != db_support.descriptive_name:
+    # Check for name uniqueness if updating name
+    if 'descriptive_name' in update_data:
         existing = db.query(Support).filter(
             Support.descriptive_name == update_data['descriptive_name'],
             Support.id != support_id
         ).first()
-
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"A support named '{update_data['descriptive_name']}' already exists"
+                detail=f"Support with name '{update_data['descriptive_name']}' already exists"
             )
 
     for field, value in update_data.items():
@@ -220,33 +165,13 @@ def update_support(
 @router.delete("/{support_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_support(
         support_id: int,
+        force: bool = Query(False, description="Force delete even if in use"),
         db: Session = Depends(get_db)
 ):
     """
     Delete a support material.
     
-    TODO: Add protection in Phase Two when samples are implemented
-    Before deleting, check if any samples reference this support:
-    
-    sample_count = db.query(Sample).filter(
-        Sample.support_id == support_id
-    ).count()
-    
-    if sample_count > 0:
-        raise HTTPException(409, f"Cannot delete: {sample_count} samples use this support")
-    
-    This prevents orphaning sample records that need support information
-    for reproducibility.
-    
-    Args:
-        support_id: ID of support to delete
-        db: Database session
-    
-    Returns:
-        None (204 No Content)
-    
-    Raises:
-        HTTPException(404): If support not found
+    Fails if the support is used by any samples unless force=True.
     """
 
     db_support = db.query(Support).filter(Support.id == support_id).first()
@@ -255,6 +180,13 @@ def delete_support(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Support with ID {support_id} not found"
+        )
+
+    if not force and db_support.is_in_use:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Support is used by {db_support.sample_count} samples. "
+                   "Use force=true to delete anyway."
         )
 
     db.delete(db_support)

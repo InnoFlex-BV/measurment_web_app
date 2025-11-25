@@ -1,32 +1,56 @@
 """
-Chemical model representing chemical compounds used in research.
+Chemical model representing chemical compounds used in catalyst synthesis.
 
-Chemicals are the reagents, solvents, catalysts, and other compounds used
-in synthesis methods. This model tracks which chemicals exist in the lab
-and how they're used across different methods.
+Chemicals are the raw materials and reagents used in synthesis methods.
+Each chemical record represents a specific compound. Chemicals are linked
+to methods through a many-to-many relationship, allowing the same chemical
+to be used in multiple synthesis procedures.
 
-The model is intentionally simple, containing just identification and
-timestamps. Additional information like CAS numbers, safety data, or
-inventory quantities could be added in future enhancements.
+Database Schema (from 01_init.sql):
+----------------------------------
+create table chemicals (
+    id serial primary key,
+    name varchar(50) not null unique,
+    updated_at timestamp with time zone default current_timestamp not null,
+    created_at timestamp with time zone default current_timestamp not null
+);
+
+Design Notes:
+------------
+- Chemical names must be unique to prevent duplicates
+- Name is limited to 50 characters per database schema
+- The model is intentionally simple - additional metadata like CAS numbers,
+  formulas, or safety data could be added via schema migration if needed
 """
 
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Table, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
+# Import the junction table from method.py
+from app.models.catalysts.method import chemical_method
+
+
 class Chemical(Base):
     """
-    Chemical model for tracking chemical compounds.
+    Chemical model for tracking reagents and compounds.
     
-    Chemicals are referenced by methods to document what compounds are
-    used in each synthesis procedure. The same chemical might be used
-    in many different methods, which is why this is a separate entity
-    rather than just a field on methods.
+    Chemicals represent the materials used in catalyst synthesis.
+    They connect to methods through the chemical_method junction table,
+    documenting which chemicals are needed for each synthesis procedure.
     
-    The unique constraint on name ensures each chemical is only listed
-    once in the database, preventing duplicates from slight variations
-    in spelling or formatting.
+    Naming Conventions:
+    - Use common names for well-known compounds (e.g., "Sodium Hydroxide")
+    - Include concentration/purity when relevant (e.g., "Ethanol 99.5%")
+    - Use IUPAC names for complex or unusual compounds
+    - Include supplier/grade for critical reagents
+    
+    Examples:
+    - "Chloroplatinic Acid (H2PtCl6·6H2O)"
+    - "Tetraethyl Orthosilicate (TEOS) 98%"
+    - "Titanium(IV) Isopropoxide"
+    - "Cerium(III) Nitrate Hexahydrate"
     """
 
     __tablename__ = "chemicals"
@@ -34,40 +58,34 @@ class Chemical(Base):
     # Primary key
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # Name of the chemical compound
-    # Examples: "Titanium(IV) isopropoxide", "Ethanol", "Ammonia solution"
-    # The unique constraint prevents duplicate entries
-    name = Column(String(50), unique=True, nullable=False)
+    # Chemical name - must be unique
+    # Limited to 50 characters per database schema
+    # Should be descriptive and standardized within the research group
+    name = Column(String(50), unique=True, nullable=False, index=True)
 
-    # Timestamp tracking when this chemical was first added to the database
+    # Timestamps
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False
     )
 
-    # Timestamp tracking last modification to the chemical record
-    # Updated automatically by the database trigger
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False
     )
 
+    # =========================================================================
     # Relationships
+    # =========================================================================
 
-    # Many-to-many relationship to methods that use this chemical
-    # This is the inverse of the relationship defined in the Method model
-    # The secondary parameter references the same junction table
-    # back_populates connects this to method.chemicals
-    #
-    # When you access chemical.methods, you get a list of all methods
-    # that use this chemical, which is useful for questions like
-    # "what synthesis procedures use titanium isopropoxide?"
+    # Many-to-many: Methods that use this chemical
     methods = relationship(
         "Method",
-        secondary="chemical_method",
-        back_populates="chemicals"
+        secondary=chemical_method,
+        back_populates="chemicals",
+        doc="Synthesis methods that use this chemical"
     )
 
     def __repr__(self):
@@ -75,17 +93,11 @@ class Chemical(Base):
         return f"<Chemical(id={self.id}, name='{self.name}')>"
 
     @property
-    def usage_count(self):
-        """
-        Property that returns how many methods use this chemical.
-        
-        This is a convenience property that counts the methods relationship.
-        It's useful for UI features like showing which chemicals are most
-        commonly used, or for validation (warning before deleting a
-        widely-used chemical).
-        
-        Note: This property triggers a database query when accessed if the
-        methods relationship isn't already loaded. For bulk operations,
-        it's more efficient to use a join query with a count.
-        """
-        return len(self.methods)
+    def method_count(self) -> int:
+        """Number of methods that use this chemical."""
+        return len(self.methods) if self.methods else 0
+
+    @property
+    def is_in_use(self) -> bool:
+        """Check if any methods reference this chemical."""
+        return self.method_count > 0

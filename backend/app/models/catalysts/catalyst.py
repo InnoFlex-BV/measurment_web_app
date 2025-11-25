@@ -11,6 +11,11 @@ Catalysts can be derived from other catalysts (represented through the
 catalyst_catalyst relationship), creating chains of modification and optimization.
 For example, a catalyst might be calcined to create a new catalyst, or doped
 with additional elements to create a variant.
+
+Phase 2 Additions:
+- samples relationship: Track samples prepared from this catalyst
+- characterizations relationship: Link to analytical characterizations
+- observations relationship: Link to qualitative observations
 """
 
 from sqlalchemy import Column, Integer, String, Numeric, Text, DateTime, ForeignKey, Table, CheckConstraint
@@ -63,18 +68,30 @@ catalyst_observation = Table(
 )
 
 
+# Junction table for user-catalyst audit tracking
+# Records which users have worked on each catalyst
+user_catalyst = Table(
+    'user_catalyst',
+    Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('catalyst_id', Integer, ForeignKey('catalysts.id', ondelete='CASCADE'), primary_key=True),
+    Column('changed_at', DateTime(timezone=True), server_default=func.now(), nullable=False)
+)
+
+
 class Catalyst(Base):
     """
     Catalyst model representing synthesized catalyst materials.
     
-    Each catalyst record represents a specific batch or quantity of catalyst
-    material that was created at a particular time using a particular method.
-    The catalog tracks both the synthesis details and the physical inventory
-    (how much remains, where it's stored).
-    
-    Catalysts are typically named with identifiers like "CAT-001" or given
-    descriptive names like "TiO2-Pt-500C" that encode information about
-    composition and synthesis conditions.
+    Catalysts are the central entities in this research data management system.
+    They connect to:
+    - Methods (how they were made)
+    - Other catalysts (derivation chains)
+    - Samples (portions prepared for testing)
+    - Characterizations (analytical measurements)
+    - Observations (qualitative notes)
+    - Experiments (performance testing) [Phase 3]
+    - Users (audit tracking)
     """
 
     __tablename__ = "catalysts"
@@ -82,154 +99,136 @@ class Catalyst(Base):
     # Primary key
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # Name or identifier for this catalyst
-    # Could be a catalog number ("CAT-047"), descriptive name
-    # ("Platinum-doped Titania"), or combination
-    # Not necessarily unique because researchers might use similar naming
-    # for related catalysts, relying on IDs for uniqueness
+    # Catalyst name/identifier
+    # Should be descriptive and unique within a research group
+    # Examples: "Pt-TiO2-5wt%", "Au/CeO2-calcined-500C", "Pd-ZnO-imp-reduced"
     name = Column(String(255), nullable=False)
 
-    # Foreign key to the method used to create this catalyst
-    # This records how the catalyst was synthesized
-    # ON DELETE SET NULL means if the method is deleted, the catalyst
-    # remains but loses the method reference (preserves data integrity)
+    # Foreign key to the method used to synthesize this catalyst
+    # Methods document the synthesis procedure and chemicals used
     method_id = Column(
         Integer,
         ForeignKey('methods.id', ondelete='SET NULL'),
-        nullable=True,  # Nullable in case method is deleted or wasn't recorded
+        nullable=True,
         index=True
     )
 
-    # Yield from synthesis as a mass or quantity
-    # Recorded as a numeric with 4 decimal places for precision
-    # Example: 15.7523 grams
-    # The check constraint ensures yield is never negative
+    # Amount of catalyst material produced (in grams typically)
+    # This is the original yield from synthesis, stored for reference
+    # Check constraint ensures non-negative values
     yield_amount = Column(
-        'yield',
+        'yield',  # Column name in database is 'yield'
         Numeric(8, 4),
         CheckConstraint('yield >= 0', name='check_catalyst_yield_positive'),
         nullable=False
     )
 
-    # Current remaining amount of this catalyst in storage
-    # Decreases as material is used in samples or experiments
-    # Also has a check constraint for non-negative values
-    # Should never exceed the original yield unless additional synthesis occurred
+    # Amount of catalyst material remaining
+    # Decreases as material is used in samples or directly in experiments
     remaining_amount = Column(
         Numeric(8, 4),
         CheckConstraint('remaining_amount >= 0', name='check_catalyst_remaining_positive'),
         nullable=False
     )
 
-    # Physical storage location of this catalyst
-    # Examples: "Freezer A, Shelf 2, Box 3", "Desiccator Cabinet, Section B",
-    #           "Fume Hood 4, Left Side"
-    # Important for retrieving the material for use or characterization
+    # Physical storage location
+    # Examples: "Freezer A, Shelf 2", "Desiccator Cabinet B", "Glovebox 1"
     storage_location = Column(String(255), nullable=False)
 
     # Free-form notes about this catalyst
-    # Can include observations during synthesis, unusual properties,
-    # handling requirements, or any other relevant information
     notes = Column(Text, nullable=True)
 
-    # Timestamp tracking when this catalyst was synthesized/created
+    # Timestamps
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False
     )
 
-    # Timestamp tracking last modification to the catalyst record
-    # Updated automatically by the database trigger
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False
     )
 
+    # =========================================================================
     # Relationships
+    # =========================================================================
 
-    # Many-to-one relationship to the method used to create this catalyst
-    # catalyst.method gives you the Method object with full procedure details
+    # Many-to-one: Catalyst created using a Method
     method = relationship(
         "Method",
-        back_populates="catalysts"
+        back_populates="catalysts",
+        doc="Synthesis method used to create this catalyst"
     )
 
-    # Self-referential many-to-many relationship for catalyst derivation
-    # Catalysts can be created from other catalysts through modification
-    #
-    # input_catalysts: catalysts that were used as inputs to create this one
-    # output_catalysts: catalysts that were created using this one as input
-    #
-    # Example: If Catalyst B was created by calcining Catalyst A:
-    # - A.output_catalysts includes B
-    # - B.input_catalysts includes A
-    #
-    # primaryjoin and secondaryjoin tell SQLAlchemy how to navigate the
-    # self-referential relationship through the junction table
+    # Self-referential many-to-many for catalyst derivation chains
+    # input_catalysts: catalysts used to create this one
+    # output_catalysts: catalysts created from this one
     input_catalysts = relationship(
         "Catalyst",
         secondary=catalyst_catalyst,
         primaryjoin=(id == catalyst_catalyst.c.output_catalyst_id),
         secondaryjoin=(id == catalyst_catalyst.c.input_catalyst_id),
-        backref="output_catalysts"
+        backref="output_catalysts",
+        doc="Catalysts that were used as inputs to create this catalyst"
     )
 
-    # Many-to-many relationship to characterizations performed on this catalyst
-    # A catalyst can have multiple characterizations (XRD, BET, TEM, etc.)
-    # and a single characterization record might analyze multiple catalysts
-    # (though this is less common in practice)
-    # TODO: uncomment in the future
-    # characterizations = relationship(
-    #     "Characterization",
-    #     secondary=catalyst_characterization,
-    #     back_populates="catalysts"
-    # )
+    # One-to-many: Samples prepared from this catalyst (Phase 2)
+    samples = relationship(
+        "Sample",
+        back_populates="catalyst",
+        cascade="all, delete-orphan",
+        doc="Samples prepared from this catalyst"
+    )
 
-    # Many-to-many relationship to observations about this catalyst
-    # Observations might record synthesis notes, appearance, handling issues,
-    # or unexpected behaviors
-    # TODO: uncomment in the future
-    # observations = relationship(
-    #     "Observation",
-    #     secondary=catalyst_observation,
-    #     back_populates="catalysts"
-    # )
+    # Many-to-many: Characterizations of this catalyst (Phase 2)
+    characterizations = relationship(
+        "Characterization",
+        secondary=catalyst_characterization,
+        back_populates="catalysts",
+        doc="Analytical characterizations performed on this catalyst"
+    )
 
-    # One-to-many relationship to samples created from this catalyst
-    # Samples represent the catalyst applied to a support or prepared
-    # for testing in a specific way
-    # We'll define this when we create the Sample model in Phase 2
-    # TODO: uncomment once implemented
-    # samples = relationship(
-    #     "Sample",
-    #     back_populates="catalyst"
-    # )
+    # Many-to-many: Observations about this catalyst (Phase 2)
+    observations = relationship(
+        "Observation",
+        secondary=catalyst_observation,
+        back_populates="catalysts",
+        doc="Qualitative observations about this catalyst"
+    )
+
+    # Many-to-many: Users who worked on this catalyst (Phase 5)
+    users = relationship(
+        "User",
+        secondary=user_catalyst,
+        back_populates="catalysts",
+        doc="Users who have worked on this catalyst"
+    )
 
     def __repr__(self):
         """String representation for debugging."""
         return f"<Catalyst(id={self.id}, name='{self.name}', remaining={self.remaining_amount})>"
 
     @property
-    def is_depleted(self):
-        """
-        Property indicating whether this catalyst is fully consumed.
-        
-        Returns True if remaining_amount is zero or very close to zero
-        (within floating point tolerance).
-        """
+    def is_depleted(self) -> bool:
+        """Check if this catalyst is fully consumed."""
         return self.remaining_amount <= 0.0001
 
     @property
-    def usage_percentage(self):
-        """
-        Property calculating what percentage of the original yield has been used.
-        
-        Returns a value between 0 and 100 representing the percentage consumed.
-        Returns 0 if yield is 0 to avoid division by zero.
-        """
+    def usage_percentage(self) -> float:
+        """Calculate percentage of original yield that has been used."""
         if self.yield_amount == 0:
-            return 0
-        used_amount = self.yield_amount - self.remaining_amount
-        return (used_amount / self.yield_amount) * 100
+            return 0.0
+        used = float(self.yield_amount) - float(self.remaining_amount)
+        return (used / float(self.yield_amount)) * 100
+
+    @property
+    def sample_count(self) -> int:
+        """Number of samples prepared from this catalyst."""
+        return len(self.samples) if self.samples else 0
+
+    @property
+    def characterization_count(self) -> int:
+        """Number of characterizations performed on this catalyst."""
+        return len(self.characterizations) if self.characterizations else 0

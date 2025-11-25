@@ -1,82 +1,129 @@
 """
-Database configuration and session management.
+Database connection and session management.
 
-This module sets up the SQLAlchemy engine and session factory for connecting
-to PostgreSQL. It provides the database session dependency that routes use
-to interact with the database.
+This module configures SQLAlchemy to connect to PostgreSQL and provides
+the session dependency for FastAPI endpoints. The configuration supports
+both local development and Docker deployment through environment variables.
+
+Key Components:
+- Engine: Manages the connection pool to PostgreSQL
+- SessionLocal: Factory for creating database sessions
+- Base: Declarative base for all ORM models
+- get_db: FastAPI dependency that provides sessions with proper cleanup
+
+Environment Variables:
+- DATABASE_URL: Full connection string (preferred for production)
+- DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD: Individual components
+
+Connection Pool Settings:
+- pool_size: Number of connections to keep open (default: 5)
+- max_overflow: Additional connections allowed during peak load (default: 10)
+- pool_pre_ping: Test connections before use to handle stale connections
 """
 
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from app.config import settings
+from typing import Generator
 
-# Get database URL from environment variable
-# This keeps credentials out of source code and allows easy configuration
-# Format: postgresql://username:password@host:port/database
-DATABASE_URL = settings.DATABASE_URL
 
-# Create the SQLAlchemy engine
-# The engine manages database connections and connection pooling
-# 
-# pool_pre_ping=True makes SQLAlchemy verify connections are alive before using them
-# This prevents errors from stale connections after database restarts
-# 
-# echo=False in production, but setting to True during development would log all SQL
-# which is invaluable for understanding what SQLAlchemy is doing
+def get_database_url() -> str:
+    """
+    Construct database URL from environment variables.
+    
+    Supports two configuration methods:
+    1. DATABASE_URL: Complete connection string (takes precedence)
+    2. Individual variables: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+    
+    Defaults are provided for local development with Docker Compose.
+    """
+
+    # Check for complete URL first (production/deployment)
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    # Fall back to individual components (development)
+    host = os.getenv("DB_HOST", "localhost")
+    port = os.getenv("DB_PORT", "5432")
+    name = os.getenv("DB_NAME", "measurement_db")
+    user = os.getenv("DB_USER", "postgres")
+    password = os.getenv("DB_PASSWORD", "postgres")
+
+    return f"postgresql://{user}:{password}@{host}:{port}/{name}"
+
+
+# Database URL
+DATABASE_URL = get_database_url()
+
+# SQLAlchemy engine with connection pool configuration
+# pool_pre_ping helps recover from database restarts
 engine = create_engine(
     DATABASE_URL,
+    pool_size=5,
+    max_overflow=10,
     pool_pre_ping=True,
-    # Uncomment the next line to see all generated SQL queries (useful for learning/debugging)
-    #echo=settings.is_development,
+    echo=os.getenv("SQL_ECHO", "false").lower() == "true"  # SQL logging for debug
 )
 
-# Create a SessionLocal factory
-# This factory produces new Session instances for database operations
-# 
-# autocommit=False means transactions must be explicitly committed
-# This is safer because it prevents accidental commits
-# 
-# autoflush=False means objects aren't automatically flushed to the database
-# You control when flushes happen by calling flush() or commit()
-# 
-# bind=engine connects sessions to our database engine
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Session factory
+# autocommit=False: Explicit transaction control
+# autoflush=False: Manual flush for better control over when changes are sent
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
-# Create the declarative base class
-# All SQLAlchemy models will inherit from this
-# The base class provides the machinery that makes the ORM work
-# It tracks model classes and their table metadata
+# Declarative base for ORM models
+# All models inherit from this base
 Base = declarative_base()
 
 
-def get_db():
+def get_db() -> Generator:
     """
-    Database session dependency for FastAPI routes.
+    FastAPI dependency that provides database sessions.
     
-    This function is a dependency that routes can declare to get a database session.
-    FastAPI's dependency injection system calls this function, yields the session to
-    the route, and ensures the session is closed when the request completes.
+    Usage in endpoints:
+        @router.get("/items")
+        def get_items(db: Session = Depends(get_db)):
+            return db.query(Item).all()
     
-    The try-finally pattern ensures the session is always closed, even if the route
-    raises an exception. This prevents connection leaks.
-    
-    Usage in a route:
-        @router.get("/experiments")
-        def get_experiments(db: Session = Depends(get_db)):
-            # db is a database session you can use for queries
-            experiments = db.query(Experiment).all()
-            return experiments
+    The session is automatically closed after the request completes,
+    even if an exception occurs. This prevents connection leaks.
     
     Yields:
-        Session: A SQLAlchemy database session
+        Session: SQLAlchemy database session
     """
     db = SessionLocal()
     try:
-        # Yield the session to the route
-        # The route executes with this session
         yield db
     finally:
-        # After the route completes (successfully or with an error),
-        # close the session to return the connection to the pool
         db.close()
+
+
+def init_db():
+    """
+    Initialize database tables.
+    
+    Creates all tables defined in the ORM models. This is typically
+    only used for development or testing. In production, use Alembic
+    migrations for schema management.
+    
+    Note: This requires all models to be imported before calling,
+    so that Base.metadata contains all table definitions.
+    """
+    # Import all models to register them with Base.metadata
+    # This ensures all tables are created
+    from app.models.core.user import User
+    from app.models.catalysts.chemical import Chemical
+    from app.models.catalysts.method import Method, UserMethod
+    from app.models.catalysts.support import Support
+    from app.models.catalysts.catalyst import Catalyst
+    from app.models.catalysts.sample import Sample
+    from app.models.analysis.characterization import Characterization
+    from app.models.analysis.observation import Observation
+    # Phase 3 models will be added here
+
+    Base.metadata.create_all(bind=engine)
