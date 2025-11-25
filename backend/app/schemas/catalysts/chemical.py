@@ -8,7 +8,7 @@ name and timestamps.
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 class ChemicalBase(BaseModel):
@@ -66,6 +66,12 @@ class ChemicalUpdate(BaseModel):
         description="Updated chemical name"
     )
 
+class ChemicalSimple(ChemicalBase):
+    """
+    Simplified schema for nested representations.
+    """
+    id: int = Field(..., description="Unique identifier")
+    model_config = ConfigDict(from_attributes=True)
 
 class ChemicalResponse(ChemicalBase):
     """
@@ -85,6 +91,11 @@ class ChemicalResponse(ChemicalBase):
     # methods: Optional[List["MethodResponse"]] = None
     # But we'll keep it simple for now and add relationship inclusion
     # as an enhancement later when we implement the router with include parameters
+    
+    methods: Optional[List["MethodSimple"]] = Field(
+        default=None,
+        description="List of chemicals used in this method (included when requested)"
+    )
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -99,3 +110,11 @@ class ChemicalResponse(ChemicalBase):
             ]
         }
     )
+    
+# Import at the bottom to avoid circular dependencies
+# This is a common pattern when schemas reference each other
+from app.schemas.catalysts.method import MethodSimple
+
+# Tell Pydantic to rebuild the model now that ChemicalResponse is available
+# This resolves the forward reference "ChemicalResponse" in the chemicals field
+ChemicalResponse.model_rebuild()

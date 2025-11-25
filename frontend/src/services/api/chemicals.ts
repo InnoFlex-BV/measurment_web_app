@@ -10,8 +10,9 @@ export const list = async (params?: ChemicalListParams): Promise<Chemical[]> => 
     return response.data;
 };
 
-export const get = async (id: number): Promise<Chemical> => {
-    const response = await apiClient.get(`/api/chemicals/${id}`);
+export const get = async (id: number, include?: string): Promise<Chemical> => {
+    const params = include ? { include } : undefined;
+    const response = await apiClient.get(`/api/chemicals/${id}`, { params });
     return response.data;
 };
 

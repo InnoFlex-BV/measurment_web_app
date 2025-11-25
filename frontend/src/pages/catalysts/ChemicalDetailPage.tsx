@@ -18,7 +18,7 @@ export const ChemicalDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const chemicalId = id ? parseInt(id) : undefined;
 
-    const { data: chemical, isLoading, error } = useChemical(chemicalId);
+    const { data: chemical, isLoading, error } = useChemical(chemicalId, 'methods');
     const deleteMutation = useDeleteChemical();
 
     const handleDelete = () => {
@@ -102,7 +102,53 @@ export const ChemicalDetailPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* TODO: Add section showing methods that use this chemical */}
+            {/* Chemicals section - this is where we display the relationship */}
+            <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                    Used In Methods
+                </h3>
+
+                {chemical.methods && chemical.methods.length > 0 ? (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                        gap: 'var(--spacing-sm)'
+                    }}>
+                        {chemical.methods.map(method => (
+                            <Link
+                                key={method.id}
+                                to={`/methods/${method.id}`}
+                                style={{
+                                    padding: 'var(--spacing-sm) var(--spacing-md)',
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    borderRadius: 'var(--radius-md)',
+                                    textDecoration: 'none',
+                                    color: 'var(--color-text)',
+                                    fontSize: '0.875rem',
+                                    border: '1px solid var(--color-border)',
+                                    transition: 'all 0.15s',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--color-primary)';
+                                    e.currentTarget.style.color = 'white';
+                                    e.currentTarget.style.borderColor = 'var(--color-primary)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
+                                    e.currentTarget.style.color = 'var(--color-text)';
+                                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                                }}
+                            >
+                                {method.descriptive_name}
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                        No methods use this chemical.
+                    </p>
+                )}
+            </div>
             {/* TODO: Phase 2 - Add section showing samples containing this chemical */}
         </div>
     );

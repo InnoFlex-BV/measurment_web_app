@@ -8,10 +8,10 @@ export function useChemicals(params?: ChemicalListParams): UseQueryResult<Chemic
     });
 }
 
-export function useChemical(id?: number): UseQueryResult<Chemical, Error> {
+export function useChemical(id?: number, include?: string): UseQueryResult<Chemical, Error> {
     return useQuery({
-        queryKey: ['chemicals', id],
-        queryFn: () => chemicalApi.get(id!),
+        queryKey: ['chemicals', id, include],
+        queryFn: () => chemicalApi.get(id!, include),
         enabled: !!id,
     });
 }

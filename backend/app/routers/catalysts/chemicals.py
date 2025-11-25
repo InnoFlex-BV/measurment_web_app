@@ -17,7 +17,7 @@ you'll add in future phases like contaminants, carriers, and waveforms.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 
@@ -82,6 +82,7 @@ def list_chemicals(
 @router.get("/{chemical_id}", response_model=ChemicalResponse)
 def get_chemical(
         chemical_id: int,
+        include: Optional[str] = Query(None, description="Comma-separated list of relationships to include"),
         db: Session = Depends(get_db)
 ):
     """
@@ -104,7 +105,18 @@ def get_chemical(
         HTTPException(404): If chemical not found
     """
 
-    chemical = db.query(Chemical).filter(Chemical.id == chemical_id).first()
+    query = db.query(Chemical)
+    
+    # Parse include parameter
+    include_rels = set()
+    if include:
+        include_rels = {rel.strip() for rel in include.split(',')}
+
+    # Apply eager loading
+    if 'methods' in include_rels:
+        query = query.options(joinedload(Chemical.methods))
+    
+    chemical = query.filter(Chemical.id == chemical_id).first()
 
     if chemical is None:
         raise HTTPException(

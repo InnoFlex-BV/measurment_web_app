@@ -45,6 +45,7 @@ export interface Chemical {
     name: string;
     created_at: string;
     updated_at: string;
+    methods?: Method[];
 }
 
 export interface ChemicalCreate {

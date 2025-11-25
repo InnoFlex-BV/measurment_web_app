@@ -32,7 +32,7 @@ export const Navigation: React.FC = () => {
             <div className="container">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                     <Link to="/" style={{ fontWeight: 'bold', fontSize: '1.25rem', textDecoration: 'none', color: 'var(--color-text)' }}>
-                        Lab Data System
+                        LIMS
                     </Link>
 
                     <ul className="nav-list">

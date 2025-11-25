@@ -124,6 +124,16 @@ class MethodUpdate(BaseModel):
         description="Whether to activate or deactivate this method"
     )
 
+class MethodSimple(MethodBase):
+    """
+    Simplified schema for nested representations.
+    """
+    id: int = Field(..., description="Unique identifier")
+    is_active: bool = Field(..., description="Whether this method is available")
+    created_at: datetime = Field(..., description="When this method was created")
+    updated_at: datetime = Field(..., description="When this method was last modified")
+
+    model_config = ConfigDict(from_attributes=True)
 
 class MethodResponse(MethodBase):
     """
@@ -150,7 +160,7 @@ class MethodResponse(MethodBase):
     # a circular import (chemicals imports methods, methods imports chemicals)
     # We solve this by using a forward reference string "ChemicalResponse"
     # and calling model_rebuild() after all schemas are loaded
-    chemicals: Optional[List["ChemicalResponse"]] = Field(
+    chemicals: Optional[List["ChemicalSimple"]] = Field(
         default=None,
         description="List of chemicals used in this method (included when requested)"
     )
@@ -175,7 +185,7 @@ class MethodResponse(MethodBase):
 
 # Import at the bottom to avoid circular dependencies
 # This is a common pattern when schemas reference each other
-from app.schemas.catalysts.chemical import ChemicalResponse
+from app.schemas.catalysts.chemical import ChemicalSimple
 
 # Tell Pydantic to rebuild the model now that ChemicalResponse is available
 # This resolves the forward reference "ChemicalResponse" in the chemicals field

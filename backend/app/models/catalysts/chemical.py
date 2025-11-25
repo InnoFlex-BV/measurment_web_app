@@ -10,11 +10,10 @@ timestamps. Additional information like CAS numbers, safety data, or
 inventory quantities could be added in future enhancements.
 """
 
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Table, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
-
 
 class Chemical(Base):
     """
