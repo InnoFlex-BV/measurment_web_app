@@ -84,7 +84,7 @@ class UserMethod(Base):
     change_notes = Column(Text, nullable=True)
 
     # Relationships to parent entities
-    # user = relationship("User", back_populates="method_changes")
+    user = relationship("User", back_populates="method_changes")
     method = relationship("Method", back_populates="user_changes")
 
     def __repr__(self):

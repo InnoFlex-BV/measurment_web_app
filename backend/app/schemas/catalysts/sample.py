@@ -22,7 +22,14 @@ The schemas support:
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Optional, List
+
+from app.schemas.experiments.experiment import ExperimentSimple
+from app.schemas.catalysts.catalyst import CatalystSimple
+from app.schemas.catalysts.support import SupportResponse
+from app.schemas.catalysts.method import MethodSimple
+from app.schemas.analysis.observation import ObservationSimple
+from app.schemas.core.user import UserSimple
 
 
 class SampleBase(BaseModel):
@@ -211,37 +218,37 @@ class SampleResponse(SampleBase):
     )
 
     # Optional nested relationships (populated via include parameter)
-    catalyst: Optional[Any] = Field(
+    catalyst: Optional[CatalystSimple] = Field(
         default=None,
         description="Source catalyst (included when requested)"
     )
 
-    support: Optional[Any] = Field(
+    support: Optional[SupportResponse] = Field(
         default=None,
         description="Support material (included when requested)"
     )
 
-    method: Optional[Any] = Field(
+    method: Optional[MethodSimple] = Field(
         default=None,
         description="Preparation method (included when requested)"
     )
 
-    characterizations: Optional[List[Any]] = Field(
+    characterizations: Optional[List["CharacterizationSimple"]] = Field(
         default=None,
         description="Associated characterizations (included when requested)"
     )
 
-    observations: Optional[List[Any]] = Field(
+    observations: Optional[List["ObservationSimple"]] = Field(
         default=None,
         description="Associated observations (included when requested)"
     )
 
-    experiments: Optional[List[Any]] = Field(
+    experiments: Optional[List["ExperimentSimple"]] = Field(
         default=None,
         description="Experiments using this sample (included when requested)"
     )
 
-    users: Optional[List[Any]] = Field(
+    users: Optional[List["UserSimple"]] = Field(
         default=None,
         description="Users who worked on this sample (included when requested)"
     )
@@ -276,3 +283,4 @@ if TYPE_CHECKING:
     from app.schemas.catalysts.catalyst import CatalystSimple
     from app.schemas.catalysts.support import SupportResponse
     from app.schemas.catalysts.method import MethodSimple
+    from app.schemas.analysis.characterization import CharacterizationSimple

@@ -5,22 +5,22 @@ This package contains all SQLAlchemy ORM models organized by domain:
 
 Domains:
 --------
+- core: Fundamental infrastructure
+  - User, File
+  
 - catalysts: Catalyst synthesis and inventory
   - Catalyst, Sample, Method, Chemical, Support, UserMethod
   
 - analysis: Analytical chemistry measurements
   - Characterization, Observation
   
-- experiments: Performance testing (Phase 3)
+- experiments: Performance testing
   - Experiment, Plasma, Photocatalysis, Misc
   - Reactor, Analyzer, FTIR, OES
-  - Processed
+  - Waveform, Processed
   
-- reference: Supporting reference data (Phase 4)
-  - Contaminant, Carrier, Waveform, Group
-  
-- core: Fundamental infrastructure
-  - User, File
+- reference: Supporting reference data
+  - Contaminant, Carrier, Group
 
 Junction Tables:
 ----------------
@@ -33,6 +33,9 @@ Many-to-many relationships are implemented through junction tables:
 - sample_observation: Samples ↔ Observations
 - sample_experiment: Samples ↔ Experiments
 - observation_file: Observations ↔ Files
+- group_experiment: Groups ↔ Experiments
+- contaminant_experiment: Contaminants ↔ Experiments (with ppm)
+- carrier_experiment: Carriers ↔ Experiments (with ratio)
 - user_catalyst, user_sample, user_characterization, 
   user_observation, user_experiment: User audit tracking
 
@@ -50,8 +53,7 @@ Or from their domain subpackage:
 # Core Domain
 # =============================================================================
 from app.models.core.user import User
-# File will be added in Phase 3
-# from app.models.core.file import File
+from app.models.core.file import File
 
 # =============================================================================
 # Catalyst Domain
@@ -88,20 +90,23 @@ from app.models.analysis.observation import (
 )
 
 # =============================================================================
-# Experiments Domain (Phase 3)
+# Experiments Domain
 # =============================================================================
-# from app.models.experiments import (
-#     Experiment, Plasma, Photocatalysis, Misc,
-#     Reactor, Analyzer, FTIR, OES,
-#     Processed, user_experiment
-# )
+from app.models.experiments.waveform import Waveform
+from app.models.experiments.reactor import Reactor
+from app.models.experiments.processed import Processed
+from app.models.experiments.analyzer import Analyzer, FTIR, OES
+from app.models.experiments.experiment import (
+    Experiment, Plasma, Photocatalysis, Misc,
+    user_experiment
+)
 
 # =============================================================================
-# Reference Domain (Phase 4)
+# Reference Domain
 # =============================================================================
-# from app.models.reference import (
-#     Contaminant, Carrier, Waveform, Group
-# )
+from app.models.reference.contaminant import Contaminant, contaminant_experiment
+from app.models.reference.carrier import Carrier, carrier_experiment
+from app.models.reference.group import Group, group_experiment
 
 # =============================================================================
 # Exports
@@ -109,7 +114,7 @@ from app.models.analysis.observation import (
 __all__ = [
     # Core
     "User",
-    # "File",  # Phase 3
+    "File",
 
     # Catalysts
     "Chemical",
@@ -122,6 +127,23 @@ __all__ = [
     # Analysis
     "Characterization",
     "Observation",
+
+    # Experiments
+    "Waveform",
+    "Reactor",
+    "Processed",
+    "Analyzer",
+    "FTIR",
+    "OES",
+    "Experiment",
+    "Plasma",
+    "Photocatalysis",
+    "Misc",
+
+    # Reference
+    "Contaminant",
+    "Carrier",
+    "Group",
 
     # Junction tables (for advanced queries)
     "chemical_method",
@@ -136,4 +158,8 @@ __all__ = [
     "user_characterization",
     "observation_file",
     "user_observation",
+    "user_experiment",
+    "contaminant_experiment",
+    "carrier_experiment",
+    "group_experiment",
 ]

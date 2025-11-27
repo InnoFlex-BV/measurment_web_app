@@ -115,15 +115,31 @@ def init_db():
     so that Base.metadata contains all table definitions.
     """
     # Import all models to register them with Base.metadata
-    # This ensures all tables are created
+    # Core
     from app.models.core.user import User
+    from app.models.core.file import File
+
+    # Catalysts
     from app.models.catalysts.chemical import Chemical
     from app.models.catalysts.method import Method, UserMethod
     from app.models.catalysts.support import Support
     from app.models.catalysts.catalyst import Catalyst
     from app.models.catalysts.sample import Sample
+
+    # Analysis
     from app.models.analysis.characterization import Characterization
     from app.models.analysis.observation import Observation
-    # Phase 3 models will be added here
+
+    # Experiments
+    from app.models.experiments.waveform import Waveform
+    from app.models.experiments.reactor import Reactor
+    from app.models.experiments.processed import Processed
+    from app.models.experiments.analyzer import Analyzer, FTIR, OES
+    from app.models.experiments.experiment import Experiment, Plasma, Photocatalysis, Misc
+
+    # Reference
+    from app.models.reference.contaminant import Contaminant
+    from app.models.reference.carrier import Carrier
+    from app.models.reference.group import Group
 
     Base.metadata.create_all(bind=engine)

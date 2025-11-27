@@ -252,7 +252,7 @@ class ObservationResponse(ObservationBase):
     )
 
     # Optional nested relationships
-    catalysts: Optional[List[Any]] = Field(
+    catalysts: Optional[List["Ca frtalyst"]] = Field(
         default=None,
         description="Related catalysts (included when requested)"
     )

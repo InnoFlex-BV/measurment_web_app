@@ -15,11 +15,11 @@ Each entity typically has these schema variants:
 
 Domains:
 --------
+- core: Fundamental infrastructure (User, File)
 - catalysts: Catalyst synthesis and inventory
 - analysis: Analytical chemistry measurements
-- experiments: Performance testing (Phase 3)
-- reference: Supporting reference data (Phase 4)
-- core: Fundamental infrastructure (User, File)
+- experiments: Performance testing
+- reference: Supporting reference data
 
 Usage:
 ------
@@ -36,6 +36,9 @@ Or from domain subpackages:
 # =============================================================================
 from app.schemas.core.user import (
     UserBase, UserCreate, UserUpdate, UserSimple, UserResponse
+)
+from app.schemas.core.file import (
+    FileBase, FileCreate, FileUpdate, FileSimple, FileResponse
 )
 
 # =============================================================================
@@ -74,37 +77,71 @@ from app.schemas.analysis.observation import (
 )
 
 # =============================================================================
-# Experiments Domain (Phase 3)
+# Experiments Domain
 # =============================================================================
-# Experiment schemas will be added here
+from app.schemas.experiments.waveform import (
+    WaveformBase, WaveformCreate, WaveformUpdate,
+    WaveformSimple, WaveformResponse
+)
+from app.schemas.experiments.reactor import (
+    ReactorBase, ReactorCreate, ReactorUpdate,
+    ReactorSimple, ReactorResponse
+)
+from app.schemas.experiments.processed import (
+    ProcessedBase, ProcessedCreate, ProcessedUpdate,
+    ProcessedSimple, ProcessedResponse
+)
+from app.schemas.experiments.analyzer import (
+    AnalyzerBase, AnalyzerCreate, AnalyzerUpdate, AnalyzerSimple, AnalyzerResponse,
+    FTIRBase, FTIRCreate, FTIRUpdate, FTIRResponse,
+    OESBase, OESCreate, OESUpdate, OESResponse,
+    AnalyzerCreateUnion, AnalyzerResponseUnion
+)
+from app.schemas.experiments.experiment import (
+    ExperimentBase, ExperimentCreate, ExperimentUpdate, ExperimentSimple, ExperimentResponse,
+    PlasmaBase, PlasmaCreate, PlasmaUpdate, PlasmaResponse,
+    PhotocatalysisBase, PhotocatalysisCreate, PhotocatalysisUpdate, PhotocatalysisResponse,
+    MiscBase, MiscCreate, MiscUpdate, MiscResponse,
+    ExperimentCreateUnion, ExperimentResponseUnion
+)
 
 # =============================================================================
-# Reference Domain (Phase 4)
+# Reference Domain
 # =============================================================================
-# Reference schemas will be added here
+from app.schemas.reference.contaminant import (
+    ContaminantBase, ContaminantCreate, ContaminantUpdate,
+    ContaminantSimple, ContaminantWithPpm, ContaminantResponse,
+    ContaminantExperimentData
+)
+from app.schemas.reference.carrier import (
+    CarrierBase, CarrierCreate, CarrierUpdate,
+    CarrierSimple, CarrierWithRatio, CarrierResponse,
+    CarrierExperimentData
+)
+from app.schemas.reference.group import (
+    GroupBase, GroupCreate, GroupUpdate, GroupSimple, GroupResponse
+)
 
 # =============================================================================
 # Exports
 # =============================================================================
 __all__ = [
-    # Core
+    # Core - User
     "UserBase", "UserCreate", "UserUpdate", "UserSimple", "UserResponse",
+    # Core - File
+    "FileBase", "FileCreate", "FileUpdate", "FileSimple", "FileResponse",
 
     # Catalysts - Chemical
     "ChemicalBase", "ChemicalCreate", "ChemicalUpdate",
     "ChemicalSimple", "ChemicalResponse",
-
     # Catalysts - Method
     "MethodBase", "MethodCreate", "MethodUpdate",
     "MethodSimple", "MethodResponse",
-
     # Catalysts - Support
     "SupportBase", "SupportCreate", "SupportUpdate", "SupportResponse",
-
     # Catalysts - Catalyst
     "CatalystBase", "CatalystCreate", "CatalystUpdate",
     "CatalystSimple", "CatalystResponse",
-
     # Catalysts - Sample
     "SampleBase", "SampleCreate", "SampleUpdate",
     "SampleSimple", "SampleResponse",
@@ -112,8 +149,39 @@ __all__ = [
     # Analysis - Characterization
     "CharacterizationBase", "CharacterizationCreate", "CharacterizationUpdate",
     "CharacterizationSimple", "CharacterizationResponse",
-
     # Analysis - Observation
     "ObservationBase", "ObservationCreate", "ObservationUpdate",
     "ObservationSimple", "ObservationResponse",
+
+    # Experiments - Waveform
+    "WaveformBase", "WaveformCreate", "WaveformUpdate",
+    "WaveformSimple", "WaveformResponse",
+    # Experiments - Reactor
+    "ReactorBase", "ReactorCreate", "ReactorUpdate",
+    "ReactorSimple", "ReactorResponse",
+    # Experiments - Processed
+    "ProcessedBase", "ProcessedCreate", "ProcessedUpdate",
+    "ProcessedSimple", "ProcessedResponse",
+    # Experiments - Analyzer
+    "AnalyzerBase", "AnalyzerCreate", "AnalyzerUpdate", "AnalyzerSimple", "AnalyzerResponse",
+    "FTIRBase", "FTIRCreate", "FTIRUpdate", "FTIRResponse",
+    "OESBase", "OESCreate", "OESUpdate", "OESResponse",
+    "AnalyzerCreateUnion", "AnalyzerResponseUnion",
+    # Experiments - Experiment
+    "ExperimentBase", "ExperimentCreate", "ExperimentUpdate", "ExperimentSimple", "ExperimentResponse",
+    "PlasmaBase", "PlasmaCreate", "PlasmaUpdate", "PlasmaResponse",
+    "PhotocatalysisBase", "PhotocatalysisCreate", "PhotocatalysisUpdate", "PhotocatalysisResponse",
+    "MiscBase", "MiscCreate", "MiscUpdate", "MiscResponse",
+    "ExperimentCreateUnion", "ExperimentResponseUnion",
+
+    # Reference - Contaminant
+    "ContaminantBase", "ContaminantCreate", "ContaminantUpdate",
+    "ContaminantSimple", "ContaminantWithPpm", "ContaminantResponse",
+    "ContaminantExperimentData",
+    # Reference - Carrier
+    "CarrierBase", "CarrierCreate", "CarrierUpdate",
+    "CarrierSimple", "CarrierWithRatio", "CarrierResponse",
+    "CarrierExperimentData",
+    # Reference - Group
+    "GroupBase", "GroupCreate", "GroupUpdate", "GroupSimple", "GroupResponse",
 ]

@@ -96,7 +96,7 @@ class ChemicalResponse(ChemicalBase):
     )
 
     # Optional nested relationships
-    methods: Optional[List[Any]] = Field(
+    methods: Optional[List["MethodSimple"]] = Field(
         default=None,
         description="Methods using this chemical (included when requested)"
     )
@@ -116,3 +116,10 @@ class ChemicalResponse(ChemicalBase):
             ]
         }
     )
+# Import at the bottom to avoid circular dependencies
+# This is a common pattern when schemas reference each other
+from app.schemas.catalysts.method import MethodSimple
+
+# Tell Pydantic to rebuild the model now that ChemicalResponse is available
+# This resolves the forward reference "ChemicalResponse" in the chemicals field
+ChemicalResponse.model_rebuild()

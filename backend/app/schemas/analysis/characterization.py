@@ -23,7 +23,11 @@ This keeps the schema stable while accommodating any characterization type.
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List
+
+from app.schemas.catalysts.catalyst import CatalystSimple
+from app.schemas.core.user import UserSimple
+from app.schemas.core.file import FileSimple
 
 
 class CharacterizationBase(BaseModel):
@@ -173,27 +177,27 @@ class CharacterizationResponse(CharacterizationBase):
     )
 
     # Optional nested relationships
-    catalysts: Optional[List[Any]] = Field(
+    catalysts: Optional[List["CatalystSimple"]] = Field(
         default=None,
         description="Analyzed catalysts (included when requested)"
     )
 
-    samples: Optional[List[Any]] = Field(
+    samples: Optional[List["SampleSimple"]] = Field(
         default=None,
         description="Analyzed samples (included when requested)"
     )
 
-    processed_data_file: Optional[Any] = Field(
+    processed_data_file: Optional[FileSimple] = Field(
         default=None,
         description="Processed data file info (included when requested)"
     )
 
-    raw_data_file: Optional[Any] = Field(
+    raw_data_file: Optional[FileSimple] = Field(
         default=None,
         description="Raw data file info (included when requested)"
     )
 
-    users: Optional[List[Any]] = Field(
+    users: Optional[List["UserSimple"]] = Field(
         default=None,
         description="Users who performed this (included when requested)"
     )
@@ -218,3 +222,12 @@ class CharacterizationResponse(CharacterizationBase):
             ]
         }
     )
+
+
+# Import at the bottom to avoid circular dependencies
+# This is a common pattern when schemas reference each other
+from app.schemas.catalysts.sample import SampleSimple
+
+# Tell Pydantic to rebuild the model now that ChemicalResponse is available
+# This resolves the forward reference "ChemicalResponse" in the chemicals field
+CharacterizationResponse.model_rebuild()

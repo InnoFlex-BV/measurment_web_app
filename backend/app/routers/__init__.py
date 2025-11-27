@@ -5,20 +5,20 @@ This package contains all FastAPI routers organized by domain.
 
 Domains:
 --------
+- core: Fundamental infrastructure
+  - /api/users, /api/files
+  
 - catalysts: Catalyst synthesis and inventory
   - /api/catalysts, /api/samples, /api/methods, /api/chemicals, /api/supports
   
 - analysis: Analytical chemistry measurements
   - /api/characterizations, /api/observations
   
-- experiments: Performance testing (Phase 3)
-  - /api/experiments, /api/reactors, /api/analyzers, /api/processed
+- experiments: Performance testing
+  - /api/experiments, /api/waveforms, /api/reactors, /api/processed, /api/analyzers
   
-- reference: Supporting reference data (Phase 4)
-  - /api/contaminants, /api/carriers, /api/waveforms, /api/groups
-  
-- core: Fundamental infrastructure
-  - /api/users, /api/files
+- reference: Supporting reference data
+  - /api/contaminants, /api/carriers, /api/groups
 
 Router Registration:
 -------------------
@@ -30,7 +30,7 @@ Each router defines its own prefix and tags.
 # Core Domain
 # =============================================================================
 from app.routers.core.users import router as users_router
-# files_router will be added in Phase 3
+from app.routers.core.files import router as files_router
 
 # =============================================================================
 # Catalyst Domain
@@ -48,14 +48,20 @@ from app.routers.analysis.characterizations import router as characterizations_r
 from app.routers.analysis.observations import router as observations_router
 
 # =============================================================================
-# Experiments Domain (Phase 3)
+# Experiments Domain
 # =============================================================================
-# Experiment routers will be added here
+from app.routers.experiments.waveforms import router as waveforms_router
+from app.routers.experiments.reactors import router as reactors_router
+from app.routers.experiments.processed import router as processed_router
+from app.routers.experiments.analyzers import router as analyzers_router
+from app.routers.experiments.experiments import router as experiments_router
 
 # =============================================================================
-# Reference Domain (Phase 4)
+# Reference Domain
 # =============================================================================
-# Reference routers will be added here
+from app.routers.reference.contaminants import router as contaminants_router
+from app.routers.reference.carriers import router as carriers_router
+from app.routers.reference.groups import router as groups_router
 
 # =============================================================================
 # All routers for easy import
@@ -63,6 +69,7 @@ from app.routers.analysis.observations import router as observations_router
 all_routers = [
     # Core
     users_router,
+    files_router,
     # Catalysts
     catalysts_router,
     samples_router,
@@ -72,18 +79,41 @@ all_routers = [
     # Analysis
     characterizations_router,
     observations_router,
+    # Experiments
+    waveforms_router,
+    reactors_router,
+    processed_router,
+    analyzers_router,
+    experiments_router,
+    # Reference
+    contaminants_router,
+    carriers_router,
+    groups_router,
 ]
 
 __all__ = [
     # Router list
     "all_routers",
-    # Individual routers
+    # Core
     "users_router",
+    "files_router",
+    # Catalysts
     "catalysts_router",
     "samples_router",
     "methods_router",
     "chemicals_router",
     "supports_router",
+    # Analysis
     "characterizations_router",
     "observations_router",
+    # Experiments
+    "waveforms_router",
+    "reactors_router",
+    "processed_router",
+    "analyzers_router",
+    "experiments_router",
+    # Reference
+    "contaminants_router",
+    "carriers_router",
+    "groups_router",
 ]

@@ -137,37 +137,38 @@ class User(Base):
         doc="Observations this user recorded"
     )
 
-    # # --- Phase 3: Experiment Domain ---
-    # 
-    # # Many-to-many: Experiments this user participated in
-    # # Uses user_experiment junction table (to be defined in experiment.py)
-    # experiments = relationship(
-    #     "Experiment",
-    #     secondary="user_experiment",
-    #     back_populates="users",
-    #     doc="Experiments this user participated in"
-    # )
-    # 
-    # # --- Phase 5: Method Modification History ---
-    # 
-    # # One-to-many: Method modifications made by this user
-    # # Uses UserMethod association model for rich audit data
-    # method_changes = relationship(
-    #     "UserMethod",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan",
-    #     doc="Method modification records for this user"
-    # )
-    # 
-    # # --- File Uploads ---
-    # 
-    # # One-to-many: Files uploaded by this user
-    # # Uses uploaded_by foreign key in File model
-    # uploaded_files = relationship(
-    #     "File",
-    #     back_populates="uploader",
-    #     doc="Files uploaded by this user"
-    # )
+    # --- Phase 3: Experiment Domain ---
+
+    # Many-to-many: Experiments this user participated in
+    # Uses user_experiment junction table (to be defined in experiment.py)
+    experiments = relationship(
+        "Experiment",
+        secondary="user_experiment",
+        back_populates="users",
+        doc="Experiments this user participated in"
+    )
+
+    # --- Phase 5: Method Modification History ---
+
+    # One-to-many: Method modifications made by this user
+    # Uses UserMethod association model for rich audit data
+    method_changes = relationship(
+        "UserMethod",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        doc="Method modification records for this user"
+    )
+
+    # --- File Uploads ---
+
+    # One-to-many: Files uploaded by this user
+    # Uses uploaded_by foreign key in File model
+    uploaded_files = relationship(
+        "File",
+        back_populates="uploader",
+        foreign_keys="[File.uploaded_by]",
+        doc="Files uploaded by this user"
+    )
 
     def __repr__(self):
         """String representation for debugging."""

@@ -17,6 +17,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List, Any
 
+from app.schemas.catalysts.method import MethodSimple
+
 
 class CatalystBase(BaseModel):
     """
@@ -196,7 +198,7 @@ class CatalystResponse(CatalystBase):
     )
 
     # Optional nested relationships
-    method: Optional[Any] = Field(
+    method: Optional[MethodSimple] = Field(
         default=None,
         description="Synthesis method (included when requested)"
     )

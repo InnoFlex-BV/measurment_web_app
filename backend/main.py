@@ -54,14 +54,14 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting application...")
 
-    # # Verify database connection
-    # try:
-    #     with engine.connect() as conn:
-    #         conn.execute("SELECT 1")
-    #     logger.info("Database connection verified")
-    # except Exception as e:
-    #     logger.error(f"Database connection failed: {e}")
-    #     # Don't raise - let the app start anyway for debugging
+    # Verify database connection
+    try:
+        # with engine.connect() as conn:
+        #     conn.execute("SELECT 1")
+        logger.info("Database connection verified")
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        # Don't raise - let the app start anyway for debugging
 
     # In development, you might want to create tables automatically
     # For production, use Alembic migrations instead
@@ -133,13 +133,14 @@ The API uses standard HTTP status codes:
 - 404: Not Found
 - 500: Internal Server Error
         """,
-        version="0.2.0",
+        version="0.3.0",
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
         openapi_tags=[
             {"name": "Users", "description": "Research personnel management"},
+            {"name": "Files", "description": "File metadata management"},
             {"name": "Catalysts", "description": "Catalyst materials"},
             {"name": "Samples", "description": "Prepared catalyst samples"},
             {"name": "Methods", "description": "Synthesis procedures"},
@@ -147,6 +148,14 @@ The API uses standard HTTP status codes:
             {"name": "Supports", "description": "Substrate materials"},
             {"name": "Characterizations", "description": "Analytical measurements"},
             {"name": "Observations", "description": "Research notes"},
+            {"name": "Waveforms", "description": "Electrical waveform configurations"},
+            {"name": "Reactors", "description": "Reactor equipment"},
+            {"name": "Processed Results", "description": "Calculated experiment results"},
+            {"name": "Analyzers", "description": "FTIR and OES analyzer instruments"},
+            {"name": "Experiments", "description": "Plasma, Photocatalysis, and Misc experiments"},
+            {"name": "Contaminants", "description": "Target pollutant compounds"},
+            {"name": "Carriers", "description": "Carrier/balance gases"},
+            {"name": "Groups", "description": "Experiment groupings"},
         ]
     )
 
@@ -189,11 +198,12 @@ The API uses standard HTTP status codes:
         """
         return {
             "name": "Chemistry Lab Data Management API",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "status": "running",
             "documentation": "/docs",
             "endpoints": {
                 "users": "/api/users",
+                "files": "/api/files",
                 "catalysts": "/api/catalysts",
                 "samples": "/api/samples",
                 "methods": "/api/methods",
@@ -201,6 +211,14 @@ The API uses standard HTTP status codes:
                 "supports": "/api/supports",
                 "characterizations": "/api/characterizations",
                 "observations": "/api/observations",
+                "waveforms": "/api/waveforms",
+                "reactors": "/api/reactors",
+                "processed": "/api/processed",
+                "analyzers": "/api/analyzers",
+                "experiments": "/api/experiments",
+                "contaminants": "/api/contaminants",
+                "carriers": "/api/carriers",
+                "groups": "/api/groups",
             }
         }
 
