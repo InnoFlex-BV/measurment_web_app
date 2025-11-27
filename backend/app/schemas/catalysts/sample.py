@@ -25,9 +25,7 @@ from decimal import Decimal
 from typing import Optional, List
 
 from app.schemas.experiments.experiment import ExperimentSimple
-from app.schemas.catalysts.catalyst import CatalystSimple
 from app.schemas.catalysts.support import SupportResponse
-from app.schemas.catalysts.method import MethodSimple
 from app.schemas.analysis.observation import ObservationSimple
 from app.schemas.core.user import UserSimple
 
@@ -278,9 +276,9 @@ class SampleResponse(SampleBase):
 
 
 # For circular import resolution
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from app.schemas.catalysts.catalyst import CatalystSimple
-    from app.schemas.catalysts.support import SupportResponse
-    from app.schemas.catalysts.method import MethodSimple
-    from app.schemas.analysis.characterization import CharacterizationSimple
+from app.schemas.catalysts.catalyst import CatalystSimple
+from app.schemas.catalysts.support import SupportResponse
+from app.schemas.catalysts.method import MethodSimple
+from app.schemas.analysis.characterization import CharacterizationSimple
+    
+SampleResponse.model_rebuild()

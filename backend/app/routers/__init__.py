@@ -31,6 +31,7 @@ Each router defines its own prefix and tags.
 # =============================================================================
 from app.routers.core.users import router as users_router
 from app.routers.core.files import router as files_router
+from app.routers.core.audit import router as audit_router
 
 # =============================================================================
 # Catalyst Domain
@@ -70,6 +71,7 @@ all_routers = [
     # Core
     users_router,
     files_router,
+    audit_router,
     # Catalysts
     catalysts_router,
     samples_router,
@@ -97,6 +99,7 @@ __all__ = [
     # Core
     "users_router",
     "files_router",
+    "audit_router",
     # Catalysts
     "catalysts_router",
     "samples_router",

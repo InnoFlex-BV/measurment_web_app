@@ -56,8 +56,8 @@ async def lifespan(app: FastAPI):
 
     # Verify database connection
     try:
-        # with engine.connect() as conn:
-        #     conn.execute("SELECT 1")
+        with engine.connect() as conn:
+            conn.execute("SELECT 1")
         logger.info("Database connection verified")
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
@@ -133,7 +133,7 @@ The API uses standard HTTP status codes:
 - 404: Not Found
 - 500: Internal Server Error
         """,
-        version="0.3.0",
+        version="0.4.0",
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",
@@ -141,6 +141,7 @@ The API uses standard HTTP status codes:
         openapi_tags=[
             {"name": "Users", "description": "Research personnel management"},
             {"name": "Files", "description": "File metadata management"},
+            {"name": "Audit", "description": "User contribution tracking"},
             {"name": "Catalysts", "description": "Catalyst materials"},
             {"name": "Samples", "description": "Prepared catalyst samples"},
             {"name": "Methods", "description": "Synthesis procedures"},
@@ -198,12 +199,13 @@ The API uses standard HTTP status codes:
         """
         return {
             "name": "Chemistry Lab Data Management API",
-            "version": "0.3.0",
+            "version": "0.4.0",
             "status": "running",
             "documentation": "/docs",
             "endpoints": {
                 "users": "/api/users",
                 "files": "/api/files",
+                "audit": "/api/audit",
                 "catalysts": "/api/catalysts",
                 "samples": "/api/samples",
                 "methods": "/api/methods",

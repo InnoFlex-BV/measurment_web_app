@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional, List
 
-from app.schemas.catalysts.catalyst import CatalystSimple
+from app.schemas.catalysts.sample import SampleSimple
 from app.schemas.core.user import UserSimple
 from app.schemas.core.file import FileSimple
 
@@ -226,7 +226,7 @@ class CharacterizationResponse(CharacterizationBase):
 
 # Import at the bottom to avoid circular dependencies
 # This is a common pattern when schemas reference each other
-from app.schemas.catalysts.sample import SampleSimple
+from app.schemas.catalysts.catalyst import CatalystSimple
 
 # Tell Pydantic to rebuild the model now that ChemicalResponse is available
 # This resolves the forward reference "ChemicalResponse" in the chemicals field

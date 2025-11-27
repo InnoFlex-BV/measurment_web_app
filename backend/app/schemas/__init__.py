@@ -15,7 +15,7 @@ Each entity typically has these schema variants:
 
 Domains:
 --------
-- core: Fundamental infrastructure (User, File)
+- core: Fundamental infrastructure (User, File, Audit)
 - catalysts: Catalyst synthesis and inventory
 - analysis: Analytical chemistry measurements
 - experiments: Performance testing
@@ -40,6 +40,12 @@ from app.schemas.core.user import (
 from app.schemas.core.file import (
     FileBase, FileCreate, FileUpdate, FileSimple, FileResponse
 )
+from app.schemas.core.audit import (
+    UserContributionBase, UserContributionResponse,
+    CatalystContribution, SampleContribution,
+    CharacterizationContribution, ObservationContribution,
+    ExperimentContribution, EntityContributors, UserActivitySummary
+)
 
 # =============================================================================
 # Catalyst Domain
@@ -50,7 +56,8 @@ from app.schemas.catalysts.chemical import (
 )
 from app.schemas.catalysts.method import (
     MethodBase, MethodCreate, MethodUpdate,
-    MethodSimple, MethodResponse
+    MethodSimple, MethodResponse,
+    UserMethodCreate, UserMethodResponse
 )
 from app.schemas.catalysts.support import (
     SupportBase, SupportCreate, SupportUpdate, SupportResponse
@@ -130,6 +137,11 @@ __all__ = [
     "UserBase", "UserCreate", "UserUpdate", "UserSimple", "UserResponse",
     # Core - File
     "FileBase", "FileCreate", "FileUpdate", "FileSimple", "FileResponse",
+    # Core - Audit
+    "UserContributionBase", "UserContributionResponse",
+    "CatalystContribution", "SampleContribution",
+    "CharacterizationContribution", "ObservationContribution",
+    "ExperimentContribution", "EntityContributors", "UserActivitySummary",
 
     # Catalysts - Chemical
     "ChemicalBase", "ChemicalCreate", "ChemicalUpdate",
@@ -137,6 +149,7 @@ __all__ = [
     # Catalysts - Method
     "MethodBase", "MethodCreate", "MethodUpdate",
     "MethodSimple", "MethodResponse",
+    "UserMethodCreate", "UserMethodResponse",
     # Catalysts - Support
     "SupportBase", "SupportCreate", "SupportUpdate", "SupportResponse",
     # Catalysts - Catalyst

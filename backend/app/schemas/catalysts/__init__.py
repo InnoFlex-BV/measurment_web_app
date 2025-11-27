@@ -3,10 +3,11 @@ Catalyst domain schemas.
 
 Pydantic schemas for catalyst synthesis and inventory entities:
 - Catalyst: Synthesized catalyst materials
-- Sample: Prepared portions for testing (Phase 2)
+- Sample: Prepared portions for testing
 - Method: Synthesis procedures
 - Chemical: Chemical compounds
 - Support: Substrate materials
+- UserMethod: Method modification audit records
 
 Each entity has a standard set of schemas:
 - Base: Common fields
@@ -31,7 +32,9 @@ from app.schemas.catalysts.method import (
     MethodCreate,
     MethodUpdate,
     MethodSimple,
-    MethodResponse
+    MethodResponse,
+    UserMethodCreate,
+    UserMethodResponse
 )
 
 # Support schemas
@@ -51,7 +54,7 @@ from app.schemas.catalysts.catalyst import (
     CatalystResponse
 )
 
-# Sample schemas (Phase 2)
+# Sample schemas
 from app.schemas.catalysts.sample import (
     SampleBase,
     SampleCreate,
@@ -67,6 +70,8 @@ __all__ = [
     # Method
     "MethodBase", "MethodCreate", "MethodUpdate",
     "MethodSimple", "MethodResponse",
+    # UserMethod (Method audit)
+    "UserMethodCreate", "UserMethodResponse",
     # Support
     "SupportBase", "SupportCreate", "SupportUpdate", "SupportResponse",
     # Catalyst

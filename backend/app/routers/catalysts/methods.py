@@ -2,16 +2,19 @@
 Method API router.
 
 Methods document synthesis procedures for creating catalysts and samples.
-This router provides CRUD operations and relationship management.
+This router provides CRUD operations, relationship management, and
+modification history tracking.
 
 Endpoint Summary:
-- GET    /api/methods/           List with filtering
-- POST   /api/methods/           Create new method
-- GET    /api/methods/{id}       Get details
-- PATCH  /api/methods/{id}       Update
-- DELETE /api/methods/{id}       Delete (fails if in use)
+- GET    /api/methods/                          List with filtering
+- POST   /api/methods/                          Create new method
+- GET    /api/methods/{id}                      Get details
+- PATCH  /api/methods/{id}                      Update
+- DELETE /api/methods/{id}                      Delete (fails if in use)
 - POST   /api/methods/{id}/chemicals/{chemical_id}  Add chemical
 - DELETE /api/methods/{id}/chemicals/{chemical_id}  Remove chemical
+- GET    /api/methods/{id}/history              Get modification history
+- POST   /api/methods/{id}/history              Record a modification
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -23,7 +26,8 @@ from app.models.catalysts.method import Method, UserMethod
 from app.models.catalysts.chemical import Chemical
 from app.models.core.user import User
 from app.schemas.catalysts.method import (
-    MethodCreate, MethodUpdate, MethodResponse
+    MethodCreate, MethodUpdate, MethodResponse,
+    UserMethodCreate, UserMethodResponse
 )
 
 router = APIRouter(
@@ -40,7 +44,7 @@ def list_methods(
         is_active: Optional[bool] = Query(None, description="Filter by active status"),
         include: Optional[str] = Query(
             None,
-            description="Relationships: chemicals,catalysts,samples"
+            description="Relationships: chemicals,catalysts,samples,user_changes"
         ),
         db: Session = Depends(get_db)
 ):
@@ -69,6 +73,8 @@ def list_methods(
             query = query.options(joinedload(Method.catalysts))
         if 'samples' in include_rels:
             query = query.options(joinedload(Method.samples))
+        if 'user_changes' in include_rels:
+            query = query.options(joinedload(Method.user_changes))
 
     query = query.order_by(Method.created_at.desc())
 
@@ -78,7 +84,10 @@ def list_methods(
 @router.get("/{method_id}", response_model=MethodResponse)
 def get_method(
         method_id: int,
-        include: Optional[str] = Query(None),
+        include: Optional[str] = Query(
+            None,
+            description="Relationships: chemicals,catalysts,samples,user_changes"
+        ),
         db: Session = Depends(get_db)
 ):
     """
@@ -96,6 +105,10 @@ def get_method(
             query = query.options(joinedload(Method.catalysts))
         if 'samples' in include_rels:
             query = query.options(joinedload(Method.samples))
+        if 'user_changes' in include_rels:
+            query = query.options(
+                joinedload(Method.user_changes).joinedload(UserMethod.user)
+            )
 
     method = query.filter(Method.id == method_id).first()
 
@@ -283,5 +296,117 @@ def remove_chemical_from_method(
     if chemical in method.chemicals:
         method.chemicals.remove(chemical)
         db.commit()
+
+    return None
+
+
+# =============================================================================
+# Modification History Endpoints
+# =============================================================================
+
+@router.get("/{method_id}/history", response_model=List[UserMethodResponse])
+def get_method_history(
+        method_id: int,
+        skip: int = Query(0, ge=0),
+        limit: int = Query(50, ge=1, le=500),
+        include_user: bool = Query(True, description="Include user details"),
+        db: Session = Depends(get_db)
+):
+    """
+    Get the modification history for a method.
+    
+    Returns a list of all recorded modifications, showing who made changes
+    and why. Ordered by most recent first.
+    """
+
+    # Verify method exists
+    method = db.query(Method).filter(Method.id == method_id).first()
+    if not method:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Method with ID {method_id} not found"
+        )
+
+    query = db.query(UserMethod).filter(UserMethod.method_id == method_id)
+
+    if include_user:
+        query = query.options(joinedload(UserMethod.user))
+
+    query = query.order_by(UserMethod.changed_at.desc())
+
+    return query.offset(skip).limit(limit).all()
+
+
+@router.post("/{method_id}/history", response_model=UserMethodResponse,
+             status_code=status.HTTP_201_CREATED)
+def record_method_modification(
+        method_id: int,
+        modification: UserMethodCreate,
+        db: Session = Depends(get_db)
+):
+    """
+    Record a modification entry for a method.
+    
+    Use this endpoint to explicitly log a change to a method, for example
+    when documenting a significant procedure update. This is separate from
+    the automatic recording done during PATCH operations.
+    """
+
+    # Verify method exists
+    method = db.query(Method).filter(Method.id == method_id).first()
+    if not method:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Method with ID {method_id} not found"
+        )
+
+    # Verify user exists
+    user = db.query(User).filter(User.id == modification.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User with ID {modification.user_id} not found"
+        )
+
+    # Create the modification record
+    user_method = UserMethod(
+        user_id=modification.user_id,
+        method_id=method_id,
+        change_notes=modification.change_notes
+    )
+
+    db.add(user_method)
+    db.commit()
+    db.refresh(user_method)
+
+    return user_method
+
+
+@router.delete("/{method_id}/history/{history_id}",
+               status_code=status.HTTP_204_NO_CONTENT)
+def delete_method_history_entry(
+        method_id: int,
+        history_id: int,
+        db: Session = Depends(get_db)
+):
+    """
+    Delete a specific history entry.
+    
+    Use with caution - this removes audit trail information.
+    """
+
+    entry = db.query(UserMethod).filter(
+        UserMethod.id == history_id,
+        UserMethod.method_id == method_id
+    ).first()
+
+    if not entry:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"History entry {history_id} not found for method {method_id}"
+        )
+
+    db.delete(entry)
+    db.commit()
 
     return None

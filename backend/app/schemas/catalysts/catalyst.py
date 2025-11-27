@@ -15,10 +15,12 @@ The schemas handle:
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Optional, List
 
-from app.schemas.catalysts.method import MethodSimple
-
+from app.schemas.core.user import UserSimple
+from app.schemas.catalysts.sample import SampleSimple
+from app.schemas.analysis.characterization import CharacterizationSimple
+from app.schemas.analysis.observation import ObservationSimple
 
 class CatalystBase(BaseModel):
     """
@@ -198,7 +200,7 @@ class CatalystResponse(CatalystBase):
     )
 
     # Optional nested relationships
-    method: Optional[MethodSimple] = Field(
+    method: Optional[MethodResponse] = Field(
         default=None,
         description="Synthesis method (included when requested)"
     )
@@ -213,22 +215,22 @@ class CatalystResponse(CatalystBase):
         description="Derived catalysts (included when requested)"
     )
 
-    samples: Optional[List[Any]] = Field(
+    samples: Optional[List["SampleSimple"]] = Field(
         default=None,
         description="Samples from this catalyst (included when requested)"
     )
 
-    characterizations: Optional[List[Any]] = Field(
+    characterizations: Optional[List["CharacterizationSimple"]] = Field(
         default=None,
         description="Characterizations (included when requested)"
     )
 
-    observations: Optional[List[Any]] = Field(
+    observations: Optional[List["ObservationSimple"]] = Field(
         default=None,
         description="Observations (included when requested)"
     )
 
-    users: Optional[List[Any]] = Field(
+    users: Optional[List["UserSimple"]] = Field(
         default=None,
         description="Users who worked on this (included when requested)"
     )
@@ -256,6 +258,9 @@ class CatalystResponse(CatalystBase):
         }
     )
 
+
+
+from app.schemas.catalysts.method import MethodResponse
 
 # Rebuild model to resolve forward references
 CatalystResponse.model_rebuild()

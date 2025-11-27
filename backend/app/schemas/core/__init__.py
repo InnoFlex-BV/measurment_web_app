@@ -4,6 +4,7 @@ Core infrastructure schemas.
 Pydantic schemas for fundamental application entities:
 - User: Research personnel
 - File: File metadata
+- Audit: User contribution tracking
 
 These schemas are used across all domains for audit tracking,
 file attachments, and user management.
@@ -23,6 +24,17 @@ from app.schemas.core.file import (
     FileSimple,
     FileResponse
 )
+from app.schemas.core.audit import (
+    UserContributionBase,
+    UserContributionResponse,
+    CatalystContribution,
+    SampleContribution,
+    CharacterizationContribution,
+    ObservationContribution,
+    ExperimentContribution,
+    EntityContributors,
+    UserActivitySummary
+)
 
 __all__ = [
     # User
@@ -37,4 +49,14 @@ __all__ = [
     "FileUpdate",
     "FileSimple",
     "FileResponse",
+    # Audit
+    "UserContributionBase",
+    "UserContributionResponse",
+    "CatalystContribution",
+    "SampleContribution",
+    "CharacterizationContribution",
+    "ObservationContribution",
+    "ExperimentContribution",
+    "EntityContributors",
+    "UserActivitySummary",
 ]
