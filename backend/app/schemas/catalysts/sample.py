@@ -17,17 +17,29 @@ The schemas support:
 - Inventory tracking (yield_amount, remaining_amount)
 - Relationship inclusion (catalyst, support, method, characterizations)
 - Validation for numeric constraints
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "CatalystSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 
-from app.schemas.experiments.experiment import ExperimentSimple
-from app.schemas.catalysts.support import SupportResponse
-from app.schemas.analysis.observation import ObservationSimple
-from app.schemas.core.user import UserSimple
+if TYPE_CHECKING:
+    from app.schemas.catalysts.catalyst import CatalystSimple
+    from app.schemas.catalysts.support import SupportResponse
+    from app.schemas.catalysts.method import MethodSimple
+    from app.schemas.analysis.characterization import CharacterizationSimple
+    from app.schemas.analysis.observation import ObservationSimple
+    from app.schemas.experiments.experiment import ExperimentSimple
+    from app.schemas.core.user import UserSimple
 
 
 class SampleBase(BaseModel):
@@ -216,17 +228,17 @@ class SampleResponse(SampleBase):
     )
 
     # Optional nested relationships (populated via include parameter)
-    catalyst: Optional[CatalystSimple] = Field(
+    catalyst: Optional["CatalystSimple"] = Field(
         default=None,
         description="Source catalyst (included when requested)"
     )
 
-    support: Optional[SupportResponse] = Field(
+    support: Optional["SupportResponse"] = Field(
         default=None,
         description="Support material (included when requested)"
     )
 
-    method: Optional[MethodSimple] = Field(
+    method: Optional["MethodSimple"] = Field(
         default=None,
         description="Preparation method (included when requested)"
     )
@@ -273,12 +285,3 @@ class SampleResponse(SampleBase):
             ]
         }
     )
-
-
-# For circular import resolution
-from app.schemas.catalysts.catalyst import CatalystSimple
-from app.schemas.catalysts.support import SupportResponse
-from app.schemas.catalysts.method import MethodSimple
-from app.schemas.analysis.characterization import CharacterizationSimple
-    
-SampleResponse.model_rebuild()

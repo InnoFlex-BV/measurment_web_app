@@ -7,13 +7,23 @@ this model tracks metadata, location, and integrity information.
 
 Note: This schema handles metadata only. File upload/download is handled
 by separate endpoints that work with the storage backend.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "UserSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List, TYPE_CHECKING
 
-from app.schemas.core.user import UserSimple
+if TYPE_CHECKING:
+    from app.schemas.core.user import UserSimple
+
 
 class FileBase(BaseModel):
     """
@@ -154,8 +164,8 @@ class FileResponse(FileBase):
         description="Whether file is a PDF"
     )
 
-    # Optional relationships
-    uploader: Optional[UserSimple] = Field(
+    # Optional relationships - using string forward refs
+    uploader: Optional["UserSimple"] = Field(
         default=None,
         description="User who uploaded (included when requested)"
     )

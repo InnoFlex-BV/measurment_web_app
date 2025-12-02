@@ -19,15 +19,25 @@ in typed fields (which would require constant schema updates), we use:
 3. File references: For actual measurement data
 
 This keeps the schema stable while accommodating any characterization type.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "CatalystSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 
-from app.schemas.catalysts.sample import SampleSimple
-from app.schemas.core.user import UserSimple
-from app.schemas.core.file import FileSimple
+if TYPE_CHECKING:
+    from app.schemas.catalysts.catalyst import CatalystSimple
+    from app.schemas.catalysts.sample import SampleSimple
+    from app.schemas.core.file import FileSimple
+    from app.schemas.core.user import UserSimple
 
 
 class CharacterizationBase(BaseModel):
@@ -176,7 +186,7 @@ class CharacterizationResponse(CharacterizationBase):
         description="Number of samples analyzed"
     )
 
-    # Optional nested relationships
+    # Optional nested relationships - using string forward refs
     catalysts: Optional[List["CatalystSimple"]] = Field(
         default=None,
         description="Analyzed catalysts (included when requested)"
@@ -187,12 +197,12 @@ class CharacterizationResponse(CharacterizationBase):
         description="Analyzed samples (included when requested)"
     )
 
-    processed_data_file: Optional[FileSimple] = Field(
+    processed_data_file: Optional["FileSimple"] = Field(
         default=None,
         description="Processed data file info (included when requested)"
     )
 
-    raw_data_file: Optional[FileSimple] = Field(
+    raw_data_file: Optional["FileSimple"] = Field(
         default=None,
         description="Raw data file info (included when requested)"
     )
@@ -222,12 +232,3 @@ class CharacterizationResponse(CharacterizationBase):
             ]
         }
     )
-
-
-# Import at the bottom to avoid circular dependencies
-# This is a common pattern when schemas reference each other
-from app.schemas.catalysts.catalyst import CatalystSimple
-
-# Tell Pydantic to rebuild the model now that ChemicalResponse is available
-# This resolves the forward reference "ChemicalResponse" in the chemicals field
-CharacterizationResponse.model_rebuild()

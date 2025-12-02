@@ -25,11 +25,25 @@ JSONB Field Guidelines:
 
 These schemas ensure the JSON fields are properly validated while
 maintaining flexibility for diverse research needs.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "CatalystSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.schemas.catalysts.catalyst import CatalystSimple
+    from app.schemas.catalysts.sample import SampleSimple
+    from app.schemas.core.file import FileSimple
+    from app.schemas.core.user import UserSimple
 
 
 class ObservationBase(BaseModel):
@@ -251,23 +265,23 @@ class ObservationResponse(ObservationBase):
         description="Number of attached files"
     )
 
-    # Optional nested relationships
-    catalysts: Optional[List["Ca frtalyst"]] = Field(
+    # Optional nested relationships - using string forward refs
+    catalysts: Optional[List["CatalystSimple"]] = Field(
         default=None,
         description="Related catalysts (included when requested)"
     )
 
-    samples: Optional[List[Any]] = Field(
+    samples: Optional[List["SampleSimple"]] = Field(
         default=None,
         description="Related samples (included when requested)"
     )
 
-    files: Optional[List[Any]] = Field(
+    files: Optional[List["FileSimple"]] = Field(
         default=None,
         description="Attached files (included when requested)"
     )
 
-    users: Optional[List[Any]] = Field(
+    users: Optional[List["UserSimple"]] = Field(
         default=None,
         description="Users who made this observation (included when requested)"
     )

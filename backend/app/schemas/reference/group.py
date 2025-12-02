@@ -4,12 +4,23 @@ Pydantic schemas for Group entity.
 Groups allow organizing experiments into logical collections for
 comparison and analysis. A group might represent a parameter study,
 a catalyst comparison, or experiments for a specific publication.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "UserSimple") for nested types.
+    These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List, Any, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.schemas.core.file import FileSimple
+    from app.schemas.experiments.experiment import ExperimentSimple
 
 class GroupBase(BaseModel):
     """
@@ -123,12 +134,12 @@ class GroupResponse(GroupBase):
     )
 
     # Optional relationships
-    discussed_in_file: Optional[Any] = Field(
+    discussed_in_file: Optional["FileSimple"] = Field(
         default=None,
         description="Document file (included when requested)"
     )
 
-    experiments: Optional[List[Any]] = Field(
+    experiments: Optional[List[ExperimentSimple]] = Field(
         default=None,
         description="Experiments in this group (included when requested)"
     )

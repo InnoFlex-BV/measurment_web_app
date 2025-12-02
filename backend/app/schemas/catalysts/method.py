@@ -15,13 +15,17 @@ Schema Hierarchy:
 - UserMethodResponse: For displaying change history
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 
-from app.schemas.core.user import UserSimple
-from app.schemas.catalysts.catalyst import CatalystSimple
-from app.schemas.catalysts.sample import SampleSimple
+if TYPE_CHECKING:
+    from app.schemas.catalysts.chemical import ChemicalSimple
+    from app.schemas.catalysts.catalyst import CatalystSimple
+    from app.schemas.catalysts.sample import SampleSimple
+    from app.schemas.core.user import UserSimple
 
 
 class MethodBase(BaseModel):
@@ -34,26 +38,21 @@ class MethodBase(BaseModel):
         ...,
         min_length=1,
         max_length=255,
-        description="Name identifying this synthesis method",
-        examples=[
-            "Sol-Gel Synthesis",
-            "Wet Impregnation Method",
-            "Hydrothermal Synthesis at 180°C"
-        ]
+        description="Method name/title",
+        examples=["Sol-gel TiO2 synthesis", "Impregnation method for Pt/Al2O3"]
     )
 
     # Detailed procedure
     procedure: str = Field(
         ...,
         min_length=1,
-        description="Detailed step-by-step synthesis procedure",
-        examples=[
-            "1. Dissolve 10g of precursor in 100mL ethanol\n"
-            "2. Add 2mL of catalyst dropwise while stirring\n"
-            "3. Age solution for 24 hours at room temperature\n"
-            "4. Dry at 80°C for 12 hours\n"
-            "5. Calcine at 500°C for 4 hours"
-        ]
+        description="Step-by-step synthesis instructions"
+    )
+
+    # Active status
+    is_active: bool = Field(
+        default=True,
+        description="Whether this method can be used for new syntheses"
     )
 
 
@@ -99,6 +98,50 @@ class MethodSimple(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# =============================================================================
+# UserMethod Schemas (Method Modification History)
+# Defined before MethodResponse to avoid forward reference issues
+# =============================================================================
+
+class UserMethodCreate(BaseModel):
+    """
+    Schema for recording a method modification.
+    
+    Used when updating a method to track who made changes and why.
+    """
+
+    user_id: int = Field(
+        ...,
+        gt=0,
+        description="ID of user who made the change"
+    )
+
+    change_notes: Optional[str] = Field(
+        None,
+        description="Description of what was changed and why"
+    )
+
+
+class UserMethodResponse(BaseModel):
+    """
+    Schema for displaying method modification history.
+    """
+
+    id: int = Field(..., description="Modification record ID")
+    user_id: int = Field(..., description="User who made the change")
+    method_id: int = Field(..., description="Method that was changed")
+    changed_at: datetime = Field(..., description="When the change was made")
+    change_notes: Optional[str] = Field(None, description="Change description")
+
+    # Optional: Include user details when requested
+    user: Optional["UserSimple"] = Field(
+        default=None,
+        description="User details (included when requested)"
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class MethodResponse(MethodBase):
     """
     Complete schema for method data returned by the API.
@@ -134,7 +177,7 @@ class MethodResponse(MethodBase):
         description="Number of recorded modifications"
     )
 
-    # Optional nested relationships
+    # Optional nested relationships - using string forward refs
     chemicals: Optional[List["ChemicalSimple"]] = Field(
         default=None,
         description="Chemicals used (included when requested)"
@@ -150,7 +193,7 @@ class MethodResponse(MethodBase):
         description="Samples prepared with this method (included when requested)"
     )
 
-    user_changes: Optional[List["UserMethodResponse"]] = Field(
+    user_changes: Optional[List[UserMethodResponse]] = Field(
         default=None,
         description="Modification history (included when requested)"
     )
@@ -177,54 +220,3 @@ class MethodResponse(MethodBase):
             ]
         }
     )
-
-
-# =============================================================================
-# UserMethod Schemas (Method Modification History)
-# =============================================================================
-
-class UserMethodCreate(BaseModel):
-    """
-    Schema for recording a method modification.
-    
-    Used when updating a method to track who made changes and why.
-    """
-
-    user_id: int = Field(
-        ...,
-        gt=0,
-        description="ID of user who made the change"
-    )
-
-    change_notes: Optional[str] = Field(
-        None,
-        description="Description of what was changed and why"
-    )
-
-
-class UserMethodResponse(BaseModel):
-    """
-    Schema for displaying method modification history.
-    """
-
-    id: int = Field(..., description="Modification record ID")
-    user_id: int = Field(..., description="User who made the change")
-    method_id: int = Field(..., description="Method that was changed")
-    changed_at: datetime = Field(..., description="When the change was made")
-    change_notes: Optional[str] = Field(None, description="Change description")
-
-    # Optional: Include user details when requested
-    user: Optional[UserSimple] = Field(
-        default=None,
-        description="User details (included when requested)"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-# Import at the bottom to avoid circular dependencies
-# This is a common pattern when schemas reference each other
-from app.schemas.catalysts.chemical import ChemicalSimple
-
-# Update forward reference
-MethodResponse.model_rebuild()

@@ -9,12 +9,30 @@ and results of catalytic testing. This module implements schemas for:
 - Misc: Other experiment types
 
 The experiment_type field acts as a discriminator for polymorphic handling.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "UserSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any, Dict, Literal, Union
+from typing import Optional, List, Any, Dict, Literal, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.schemas.experiments.reactor import ReactorSimple
+    from app.schemas.experiments.analyzer import AnalyzerSimple
+    from app.schemas.catalysts.sample import SampleSimple
+    from app.schemas.reference.contaminant import ContaminantSimple
+    from app.schemas.reference.carrier import CarrierSimple
+    from app.schemas.reference.group import GroupSimple
+    from app.schemas.core.user import UserSimple
+    from app.schemas.core.file import FileSimple
 
 
 # =============================================================================
@@ -223,47 +241,47 @@ class ExperimentResponse(ExperimentBase):
     )
 
     # Optional relationships
-    reactor: Optional[Any] = Field(
+    reactor: Optional["ReactorSimple"] = Field(
         default=None,
         description="Reactor used (included when requested)"
     )
 
-    analyzer: Optional[Any] = Field(
+    analyzer: Optional["AnalyzerSimple"] = Field(
         default=None,
         description="Analyzer used (included when requested)"
     )
 
-    samples: Optional[List[Any]] = Field(
+    samples: Optional[List[SampleSimple]] = Field(
         default=None,
         description="Samples tested (included when requested)"
     )
 
-    contaminants: Optional[List[Any]] = Field(
+    contaminants: Optional[List[ContaminantSimple]] = Field(
         default=None,
         description="Target contaminants (included when requested)"
     )
 
-    carriers: Optional[List[Any]] = Field(
+    carriers: Optional[List[CarrierSimple]] = Field(
         default=None,
         description="Carrier gases (included when requested)"
     )
 
-    groups: Optional[List[Any]] = Field(
+    groups: Optional[List[GroupSimple]] = Field(
         default=None,
         description="Groups containing this experiment (included when requested)"
     )
 
-    users: Optional[List[Any]] = Field(
+    users: Optional[List[UserSimple]] = Field(
         default=None,
         description="Users who performed (included when requested)"
     )
 
-    raw_data_file: Optional[Any] = Field(
+    raw_data_file: Optional["FileSimple"] = Field(
         default=None,
         description="Raw data file (included when requested)"
     )
 
-    processed_results: Optional[Any] = Field(
+    processed_results: Optional["FileSimple"] = Field(
         default=None,
         description="Structured processed results (included when requested)"
     )

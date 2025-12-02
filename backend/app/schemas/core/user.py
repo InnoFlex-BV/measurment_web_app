@@ -8,11 +8,26 @@ the application.
 Note: Authentication fields (password, tokens) are intentionally excluded.
 This system tracks users for audit purposes; authentication should be
 handled by a separate service or identity provider.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "CatalystSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.schemas.catalysts.catalyst import CatalystSimple
+    from app.schemas.catalysts.sample import SampleSimple
+    from app.schemas.analysis.characterization import CharacterizationSimple
+    from app.schemas.analysis.observation import ObservationSimple
+    from app.schemas.experiments.experiment import ExperimentSimple
 
 
 class UserBase(BaseModel):
@@ -119,28 +134,28 @@ class UserResponse(UserBase):
         description="Number of experiments participated in"
     )
 
-    # Optional relationships (populated via include parameter)
-    catalysts: Optional[List[Any]] = Field(
+    # Optional relationships (populated via include parameter) - using string forward refs
+    catalysts: Optional[List["CatalystSimple"]] = Field(
         default=None,
         description="Catalysts worked on (included when requested)"
     )
 
-    samples: Optional[List[Any]] = Field(
+    samples: Optional[List["SampleSimple"]] = Field(
         default=None,
         description="Samples worked on (included when requested)"
     )
 
-    characterizations: Optional[List[Any]] = Field(
+    characterizations: Optional[List["CharacterizationSimple"]] = Field(
         default=None,
         description="Characterizations performed (included when requested)"
     )
 
-    observations: Optional[List[Any]] = Field(
+    observations: Optional[List["ObservationSimple"]] = Field(
         default=None,
         description="Observations made (included when requested)"
     )
 
-    experiments: Optional[List[Any]] = Field(
+    experiments: Optional[List["ExperimentSimple"]] = Field(
         default=None,
         description="Experiments participated in (included when requested)"
     )

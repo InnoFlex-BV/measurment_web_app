@@ -4,13 +4,23 @@ Pydantic schemas for Waveform entity.
 Waveforms define the electrical signal parameters used in plasma experiments,
 capturing both AC and pulsing characteristics that control plasma discharge
 behavior.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "UserSimple") for nested types.
+    These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Optional, List, Any, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.schemas.experiments.experiment import PlasmaResponse
 
 class WaveformBase(BaseModel):
     """
@@ -119,7 +129,7 @@ class WaveformResponse(WaveformBase):
     )
 
     # Optional relationships
-    plasma_experiments: Optional[List[Any]] = Field(
+    plasma_experiments: Optional[List[PlasmaResponse]] = Field(
         default=None,
         description="Plasma experiments using this waveform (included when requested)"
     )

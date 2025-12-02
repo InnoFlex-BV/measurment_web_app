@@ -10,17 +10,28 @@ The schemas handle:
 - Self-referential relationships (input/output catalysts)
 - Multiple many-to-many relationships
 - Validation for business rules
+
+Note on Forward References:
+--------------------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "MethodSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 
-from app.schemas.core.user import UserSimple
-from app.schemas.catalysts.sample import SampleSimple
-from app.schemas.analysis.characterization import CharacterizationSimple
-from app.schemas.analysis.observation import ObservationSimple
+if TYPE_CHECKING:
+    from app.schemas.catalysts.method import MethodSimple
+    from app.schemas.catalysts.sample import SampleSimple
+    from app.schemas.analysis.characterization import CharacterizationSimple
+    from app.schemas.analysis.observation import ObservationSimple
+    from app.schemas.core.user import UserSimple
+
 
 class CatalystBase(BaseModel):
     """
@@ -199,8 +210,8 @@ class CatalystResponse(CatalystBase):
         description="Number of characterizations performed"
     )
 
-    # Optional nested relationships
-    method: Optional[MethodResponse] = Field(
+    # Optional nested relationships - using string forward refs
+    method: Optional["MethodSimple"] = Field(
         default=None,
         description="Synthesis method (included when requested)"
     )
@@ -257,10 +268,3 @@ class CatalystResponse(CatalystBase):
             ]
         }
     )
-
-
-
-from app.schemas.catalysts.method import MethodResponse
-
-# Rebuild model to resolve forward references
-CatalystResponse.model_rebuild()

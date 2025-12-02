@@ -8,12 +8,23 @@ This module implements schemas for the polymorphic analyzer hierarchy:
 - OES: Optical Emission Spectrometer
 
 The analyzer_type field acts as a discriminator for polymorphic handling.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "UserSimple") for nested types.
+    These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any, Literal, Union
+from typing import Optional, List, Any, Literal, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.schemas.experiments.experiment import ExperimentSimple
 
 
 # =============================================================================
@@ -102,7 +113,7 @@ class AnalyzerResponse(AnalyzerBase):
     )
 
     # Optional relationships
-    experiments: Optional[List[Any]] = Field(
+    experiments: Optional[List[ExperimentSimple]] = Field(
         default=None,
         description="Experiments using this analyzer (included when requested)"
     )
@@ -190,7 +201,7 @@ class FTIRResponse(FTIRBase):
     is_in_use: Optional[bool] = Field(default=None)
 
     # Optional relationships
-    experiments: Optional[List[Any]] = Field(default=None)
+    experiments: Optional[List[ExperimentSimple]] = Field(default=None)
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -280,7 +291,7 @@ class OESResponse(OESBase):
     is_in_use: Optional[bool] = Field(default=None)
 
     # Optional relationships
-    experiments: Optional[List[Any]] = Field(default=None)
+    experiments: Optional[List[ExperimentSimple]] = Field(default=None)
 
     model_config = ConfigDict(
         from_attributes=True,

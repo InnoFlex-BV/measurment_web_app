@@ -198,3 +198,69 @@ __all__ = [
     # Reference - Group
     "GroupBase", "GroupCreate", "GroupUpdate", "GroupSimple", "GroupResponse",
 ]
+
+
+# =============================================================================
+# Resolve Forward References
+# =============================================================================
+# After all schemas are imported, we need to rebuild models that use
+# string forward references (e.g., "MethodSimple") so Pydantic can 
+# resolve them to actual schema classes.
+
+def _rebuild_models():
+    """Rebuild all Response schemas to resolve forward references."""
+    # Build a namespace with all Simple schemas that are referenced
+    namespace = {
+        # Core
+        'UserSimple': UserSimple,
+        'FileSimple': FileSimple,
+        # Catalysts
+        'ChemicalSimple': ChemicalSimple,
+        'MethodSimple': MethodSimple,
+        'CatalystSimple': CatalystSimple,
+        'SampleSimple': SampleSimple,
+        'SupportResponse': SupportResponse,  # Support doesn't have Simple variant
+        # Analysis
+        'CharacterizationSimple': CharacterizationSimple,
+        'ObservationSimple': ObservationSimple,
+        # Experiments
+        'WaveformSimple': WaveformSimple,
+        'ReactorSimple': ReactorSimple,
+        'ProcessedSimple': ProcessedSimple,
+        'ExperimentSimple': ExperimentSimple,
+        'AnalyzerSimple': AnalyzerSimple,
+        'PlasmaResponse': PlasmaResponse,
+        # Reference
+        'ContaminantSimple': ContaminantSimple,
+        'CarrierSimple': CarrierSimple,
+        'GroupSimple': GroupSimple,
+        # Also include Response classes for nesting
+        'UserMethodResponse': UserMethodResponse,
+    }
+
+    # Core domain
+    UserResponse.model_rebuild(_types_namespace=namespace)
+    FileResponse.model_rebuild(_types_namespace=namespace)
+
+    # Catalysts domain
+    CatalystResponse.model_rebuild(_types_namespace=namespace)
+    MethodResponse.model_rebuild(_types_namespace=namespace)
+    SampleResponse.model_rebuild(_types_namespace=namespace)
+    UserMethodResponse.model_rebuild(_types_namespace=namespace)
+
+    # Analysis domain
+    CharacterizationResponse.model_rebuild(_types_namespace=namespace)
+    ObservationResponse.model_rebuild(_types_namespace=namespace)
+
+    # Experiments domain
+    AnalyzerResponse.model_rebuild(_types_namespace=namespace)
+    ExperimentResponse.model_rebuild(_types_namespace=namespace)
+    WaveformResponse.model_rebuild(_types_namespace=namespace)
+    ReactorResponse.model_rebuild(_types_namespace=namespace)
+    ProcessedResponse.model_rebuild(_types_namespace=namespace)
+    PlasmaResponse.model_rebuild(_types_namespace=namespace)
+    PhotocatalysisResponse.model_rebuild(_types_namespace=namespace)
+    MiscResponse.model_rebuild(_types_namespace=namespace)
+    GroupResponse.model_rebuild(_types_namespace=namespace)
+
+_rebuild_models()

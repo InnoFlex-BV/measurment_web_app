@@ -4,13 +4,23 @@ Pydantic schemas for Reactor entity.
 Reactors are the vessels where catalytic reactions and plasma experiments
 are conducted. Each reactor has specific characteristics that affect
 experimental results.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "UserSimple") for nested types.
+    These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Optional, List, Any, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from app.schemas.experiments.experiment import ExperimentSimple
 
 class ReactorBase(BaseModel):
     """
@@ -89,7 +99,7 @@ class ReactorResponse(ReactorBase):
     )
 
     # Optional relationships
-    experiments: Optional[List[Any]] = Field(
+    experiments: Optional[List[ExperimentSimple]] = Field(
         default=None,
         description="Experiments using this reactor (included when requested)"
     )
