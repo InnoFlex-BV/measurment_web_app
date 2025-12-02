@@ -13,7 +13,7 @@ The experiment_type field acts as a discriminator for polymorphic handling.
 Note on imports:
 ----------------
 To avoid circular imports while maintaining proper type serialization,
-we use string forward references (e.g., "UserSimple") for nested types.
+we use string forward references (e.g., "ReactorSimple") for nested types.
 These are resolved at runtime via model_rebuild() calls.
 """
 
@@ -26,10 +26,12 @@ from typing import Optional, List, Any, Dict, Literal, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.schemas.experiments.reactor import ReactorSimple
+    from app.schemas.experiments.waveform import WaveformSimple
+    from app.schemas.experiments.processed import ProcessedSimple
     from app.schemas.experiments.analyzer import AnalyzerSimple
     from app.schemas.catalysts.sample import SampleSimple
-    from app.schemas.reference.contaminant import ContaminantSimple
-    from app.schemas.reference.carrier import CarrierSimple
+    from app.schemas.reference.contaminant import ContaminantWithPpm
+    from app.schemas.reference.carrier import CarrierWithRatio
     from app.schemas.reference.group import GroupSimple
     from app.schemas.core.user import UserSimple
     from app.schemas.core.file import FileSimple
@@ -94,7 +96,7 @@ class ExperimentBase(BaseModel):
         description="ID of publication/report file"
     )
 
-    # Processed data
+    # Processed data (JSONB - keep as Dict[str, Any])
     processed_data: Optional[Dict[str, Any]] = Field(
         None,
         description="Flexible JSONB storage for processed data"
@@ -156,7 +158,7 @@ class ExperimentCreate(ExperimentBase):
         description="IDs of users who performed this experiment"
     )
 
-    # For junction tables with extra data
+    # For junction tables with extra data (keep as Dict[str, Any] for input)
     contaminant_data: Optional[List[Dict[str, Any]]] = Field(
         default=None,
         description="Contaminants with ppm: [{'id': 1, 'ppm': 500.0}, ...]"
@@ -240,7 +242,7 @@ class ExperimentResponse(ExperimentBase):
         description="Whether conclusion is recorded"
     )
 
-    # Optional relationships
+    # Optional relationships - using string forward refs
     reactor: Optional["ReactorSimple"] = Field(
         default=None,
         description="Reactor used (included when requested)"
@@ -251,27 +253,27 @@ class ExperimentResponse(ExperimentBase):
         description="Analyzer used (included when requested)"
     )
 
-    samples: Optional[List[SampleSimple]] = Field(
+    samples: Optional[List["SampleSimple"]] = Field(
         default=None,
         description="Samples tested (included when requested)"
     )
 
-    contaminants: Optional[List[ContaminantSimple]] = Field(
+    contaminants: Optional[List["ContaminantWithPpm"]] = Field(
         default=None,
         description="Target contaminants (included when requested)"
     )
 
-    carriers: Optional[List[CarrierSimple]] = Field(
+    carriers: Optional[List["CarrierWithRatio"]] = Field(
         default=None,
         description="Carrier gases (included when requested)"
     )
 
-    groups: Optional[List[GroupSimple]] = Field(
+    groups: Optional[List["GroupSimple"]] = Field(
         default=None,
         description="Groups containing this experiment (included when requested)"
     )
 
-    users: Optional[List[UserSimple]] = Field(
+    users: Optional[List["UserSimple"]] = Field(
         default=None,
         description="Users who performed (included when requested)"
     )
@@ -281,7 +283,7 @@ class ExperimentResponse(ExperimentBase):
         description="Raw data file (included when requested)"
     )
 
-    processed_results: Optional["FileSimple"] = Field(
+    processed_results: Optional["ProcessedSimple"] = Field(
         default=None,
         description="Structured processed results (included when requested)"
     )
@@ -438,24 +440,24 @@ class PlasmaResponse(PlasmaBase):
     has_processed_data: Optional[bool] = Field(default=None)
     has_conclusion: Optional[bool] = Field(default=None)
 
-    # Optional relationships (from base)
-    reactor: Optional[Any] = Field(default=None)
-    analyzer: Optional[Any] = Field(default=None)
-    samples: Optional[List[Any]] = Field(default=None)
-    contaminants: Optional[List[Any]] = Field(default=None)
-    carriers: Optional[List[Any]] = Field(default=None)
-    groups: Optional[List[Any]] = Field(default=None)
-    users: Optional[List[Any]] = Field(default=None)
-    raw_data_file: Optional[Any] = Field(default=None)
-    processed_results: Optional[Any] = Field(default=None)
+    # Optional relationships - using string forward refs
+    reactor: Optional["ReactorSimple"] = Field(default=None)
+    analyzer: Optional["AnalyzerSimple"] = Field(default=None)
+    samples: Optional[List["SampleSimple"]] = Field(default=None)
+    contaminants: Optional[List["ContaminantWithPpm"]] = Field(default=None)
+    carriers: Optional[List["CarrierWithRatio"]] = Field(default=None)
+    groups: Optional[List["GroupSimple"]] = Field(default=None)
+    users: Optional[List["UserSimple"]] = Field(default=None)
+    raw_data_file: Optional["FileSimple"] = Field(default=None)
+    processed_results: Optional["ProcessedSimple"] = Field(default=None)
 
     # Plasma-specific relationships
-    driving_waveform: Optional[Any] = Field(
+    driving_waveform: Optional["WaveformSimple"] = Field(
         default=None,
         description="Driving waveform configuration (included when requested)"
     )
 
-    measured_waveform_file: Optional[Any] = Field(
+    measured_waveform_file: Optional["FileSimple"] = Field(
         default=None,
         description="Measured waveform file (included when requested)"
     )
@@ -586,16 +588,16 @@ class PhotocatalysisResponse(PhotocatalysisBase):
     has_processed_data: Optional[bool] = Field(default=None)
     has_conclusion: Optional[bool] = Field(default=None)
 
-    # Optional relationships (from base)
-    reactor: Optional[Any] = Field(default=None)
-    analyzer: Optional[Any] = Field(default=None)
-    samples: Optional[List[Any]] = Field(default=None)
-    contaminants: Optional[List[Any]] = Field(default=None)
-    carriers: Optional[List[Any]] = Field(default=None)
-    groups: Optional[List[Any]] = Field(default=None)
-    users: Optional[List[Any]] = Field(default=None)
-    raw_data_file: Optional[Any] = Field(default=None)
-    processed_results: Optional[Any] = Field(default=None)
+    # Optional relationships - using string forward refs
+    reactor: Optional["ReactorSimple"] = Field(default=None)
+    analyzer: Optional["AnalyzerSimple"] = Field(default=None)
+    samples: Optional[List["SampleSimple"]] = Field(default=None)
+    contaminants: Optional[List["ContaminantWithPpm"]] = Field(default=None)
+    carriers: Optional[List["CarrierWithRatio"]] = Field(default=None)
+    groups: Optional[List["GroupSimple"]] = Field(default=None)
+    users: Optional[List["UserSimple"]] = Field(default=None)
+    raw_data_file: Optional["FileSimple"] = Field(default=None)
+    processed_results: Optional["ProcessedSimple"] = Field(default=None)
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -699,16 +701,16 @@ class MiscResponse(MiscBase):
     has_processed_data: Optional[bool] = Field(default=None)
     has_conclusion: Optional[bool] = Field(default=None)
 
-    # Optional relationships (from base)
-    reactor: Optional[Any] = Field(default=None)
-    analyzer: Optional[Any] = Field(default=None)
-    samples: Optional[List[Any]] = Field(default=None)
-    contaminants: Optional[List[Any]] = Field(default=None)
-    carriers: Optional[List[Any]] = Field(default=None)
-    groups: Optional[List[Any]] = Field(default=None)
-    users: Optional[List[Any]] = Field(default=None)
-    raw_data_file: Optional[Any] = Field(default=None)
-    processed_results: Optional[Any] = Field(default=None)
+    # Optional relationships - using string forward refs
+    reactor: Optional["ReactorSimple"] = Field(default=None)
+    analyzer: Optional["AnalyzerSimple"] = Field(default=None)
+    samples: Optional[List["SampleSimple"]] = Field(default=None)
+    contaminants: Optional[List["ContaminantWithPpm"]] = Field(default=None)
+    carriers: Optional[List["CarrierWithRatio"]] = Field(default=None)
+    groups: Optional[List["GroupSimple"]] = Field(default=None)
+    users: Optional[List["UserSimple"]] = Field(default=None)
+    raw_data_file: Optional["FileSimple"] = Field(default=None)
+    processed_results: Optional["ProcessedSimple"] = Field(default=None)
 
     model_config = ConfigDict(
         from_attributes=True,

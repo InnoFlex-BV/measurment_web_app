@@ -4,12 +4,23 @@ Pydantic schemas for Carrier entity.
 Carriers are the gases used as the main flow in experiments, carrying
 the contaminants through the reactor. They're linked to experiments
 through a junction table that also stores the ratio.
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "ExperimentSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.schemas.experiments.experiment import ExperimentSimple
 
 
 class CarrierBase(BaseModel):
@@ -88,7 +99,7 @@ class CarrierResponse(CarrierBase):
     )
 
     # Optional relationships
-    experiments: Optional[List[Any]] = Field(
+    experiments: Optional[List["ExperimentSimple"]] = Field(
         default=None,
         description="Experiments using this carrier (included when requested)"
     )

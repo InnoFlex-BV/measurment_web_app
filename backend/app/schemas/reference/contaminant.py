@@ -4,12 +4,23 @@ Pydantic schemas for Contaminant entity.
 Contaminants are the target compounds that experiments aim to remove
 or decompose. They're linked to experiments through a junction table
 that also stores the concentration (ppm).
+
+Note on imports:
+----------------
+To avoid circular imports while maintaining proper type serialization,
+we use string forward references (e.g., "ExperimentSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
+
+from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.schemas.experiments.experiment import ExperimentSimple
 
 
 class ContaminantBase(BaseModel):
@@ -88,7 +99,7 @@ class ContaminantResponse(ContaminantBase):
     )
 
     # Optional relationships
-    experiments: Optional[List[Any]] = Field(
+    experiments: Optional[List["ExperimentSimple"]] = Field(
         default=None,
         description="Experiments targeting this contaminant (included when requested)"
     )

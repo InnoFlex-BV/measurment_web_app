@@ -227,12 +227,13 @@ def _rebuild_models():
         'WaveformSimple': WaveformSimple,
         'ReactorSimple': ReactorSimple,
         'ProcessedSimple': ProcessedSimple,
-        'ExperimentSimple': ExperimentSimple,
         'AnalyzerSimple': AnalyzerSimple,
-        'PlasmaResponse': PlasmaResponse,
+        'ExperimentSimple': ExperimentSimple,
         # Reference
         'ContaminantSimple': ContaminantSimple,
+        'ContaminantWithPpm': ContaminantWithPpm,
         'CarrierSimple': CarrierSimple,
+        'CarrierWithRatio': CarrierWithRatio,
         'GroupSimple': GroupSimple,
         # Also include Response classes for nesting
         'UserMethodResponse': UserMethodResponse,
@@ -252,15 +253,23 @@ def _rebuild_models():
     CharacterizationResponse.model_rebuild(_types_namespace=namespace)
     ObservationResponse.model_rebuild(_types_namespace=namespace)
 
-    # Experiments domain
-    AnalyzerResponse.model_rebuild(_types_namespace=namespace)
-    ExperimentResponse.model_rebuild(_types_namespace=namespace)
+    # Experiments domain - supporting schemas
     WaveformResponse.model_rebuild(_types_namespace=namespace)
     ReactorResponse.model_rebuild(_types_namespace=namespace)
     ProcessedResponse.model_rebuild(_types_namespace=namespace)
+    AnalyzerResponse.model_rebuild(_types_namespace=namespace)
+    FTIRResponse.model_rebuild(_types_namespace=namespace)
+    OESResponse.model_rebuild(_types_namespace=namespace)
+
+    # Experiments domain - main experiment schemas
+    ExperimentResponse.model_rebuild(_types_namespace=namespace)
     PlasmaResponse.model_rebuild(_types_namespace=namespace)
     PhotocatalysisResponse.model_rebuild(_types_namespace=namespace)
     MiscResponse.model_rebuild(_types_namespace=namespace)
+
+    # Reference domain
+    ContaminantResponse.model_rebuild(_types_namespace=namespace)
+    CarrierResponse.model_rebuild(_types_namespace=namespace)
     GroupResponse.model_rebuild(_types_namespace=namespace)
 
 _rebuild_models()

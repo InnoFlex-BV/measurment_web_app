@@ -8,19 +8,20 @@ a catalyst comparison, or experiments for a specific publication.
 Note on imports:
 ----------------
 To avoid circular imports while maintaining proper type serialization,
-we use string forward references (e.g., "UserSimple") for nested types.
-    These are resolved at runtime via model_rebuild() calls.
+we use string forward references (e.g., "ExperimentSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
 
 from __future__ import annotations
 
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional, List, Any, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.schemas.core.file import FileSimple
     from app.schemas.experiments.experiment import ExperimentSimple
+    from app.schemas.core.file import FileSimple
+
 
 class GroupBase(BaseModel):
     """
@@ -139,7 +140,7 @@ class GroupResponse(GroupBase):
         description="Document file (included when requested)"
     )
 
-    experiments: Optional[List[ExperimentSimple]] = Field(
+    experiments: Optional[List["ExperimentSimple"]] = Field(
         default=None,
         description="Experiments in this group (included when requested)"
     )

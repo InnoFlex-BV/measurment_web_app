@@ -8,8 +8,8 @@ experimental results.
 Note on imports:
 ----------------
 To avoid circular imports while maintaining proper type serialization,
-we use string forward references (e.g., "UserSimple") for nested types.
-    These are resolved at runtime via model_rebuild() calls.
+we use string forward references (e.g., "ExperimentSimple") for nested types.
+These are resolved at runtime via model_rebuild() calls.
 """
 
 from __future__ import annotations
@@ -17,10 +17,11 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Any, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.schemas.experiments.experiment import ExperimentSimple
+
 
 class ReactorBase(BaseModel):
     """
@@ -98,8 +99,8 @@ class ReactorResponse(ReactorBase):
         description="Human-readable volume with units"
     )
 
-    # Optional relationships
-    experiments: Optional[List[ExperimentSimple]] = Field(
+    # Optional relationships - using string forward refs
+    experiments: Optional[List["ExperimentSimple"]] = Field(
         default=None,
         description="Experiments using this reactor (included when requested)"
     )
