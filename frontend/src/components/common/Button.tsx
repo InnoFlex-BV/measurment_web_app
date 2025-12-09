@@ -1,48 +1,78 @@
 /**
- * Button component - Styled button with variants for different actions.
- *
- * The component supports different visual variants (primary, secondary, danger)
- * to communicate the button's purpose and importance. Loading states disable
- * interaction and show visual feedback during async operations.
+ * Button - Reusable button component with variant and size support.
  */
 
 import React from 'react';
-import clsx from 'clsx';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'danger';
-    isLoading?: boolean;
-    fullWidth?: boolean;
+    size?: 'sm' | 'md' | 'lg';
+    children: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-                                                  children,
                                                   variant = 'primary',
-                                                  isLoading = false,
-                                                  fullWidth = false,
+                                                  size = 'md',
+                                                  children,
                                                   className = '',
-                                                  disabled,
+                                                  style,
                                                   ...props
                                               }) => {
+    const baseStyles: React.CSSProperties = {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 'var(--border-radius)',
+        fontWeight: 500,
+        cursor: props.disabled ? 'not-allowed' : 'pointer',
+        opacity: props.disabled ? 0.6 : 1,
+        border: 'none',
+        transition: 'background-color 0.2s, opacity 0.2s',
+    };
+
+    // Size styles
+    const sizeStyles: Record<string, React.CSSProperties> = {
+        sm: {
+            padding: '0.25rem 0.5rem',
+            fontSize: '0.75rem',
+        },
+        md: {
+            padding: '0.5rem 1rem',
+            fontSize: '0.875rem',
+        },
+        lg: {
+            padding: '0.75rem 1.5rem',
+            fontSize: '1rem',
+        },
+    };
+
+    // Variant styles
+    const variantStyles: Record<string, React.CSSProperties> = {
+        primary: {
+            backgroundColor: 'var(--color-primary)',
+            color: 'white',
+        },
+        secondary: {
+            backgroundColor: 'var(--color-bg-secondary)',
+            color: 'var(--color-text)',
+            border: '1px solid var(--color-border)',
+        },
+        danger: {
+            backgroundColor: 'var(--color-danger)',
+            color: 'white',
+        },
+    };
+
+    const combinedStyles: React.CSSProperties = {
+        ...baseStyles,
+        ...sizeStyles[size],
+        ...variantStyles[variant],
+        ...style,
+    };
+
     return (
-        <button
-            className={clsx(
-                'button',
-                `button-${variant}`,
-                {
-                    'button-loading': isLoading,
-                    'button-full-width': fullWidth,
-                },
-                className
-            )}
-            disabled={disabled || isLoading}
-            {...props}
-        >
-            {isLoading ? (
-                <span className="button-loader">Loading...</span>
-            ) : (
-                children
-            )}
+        <button className={className} style={combinedStyles} {...props}>
+            {children}
         </button>
     );
 };
