@@ -1,5 +1,5 @@
 /**
- * FormField - Wrapper component for form inputs with label and error display.
+ * FormField - Wrapper component for form inputs with label, error, and help text display.
  */
 
 import React from 'react';
@@ -9,6 +9,7 @@ export interface FormFieldProps {
     name?: string;  // Optional - used for htmlFor on label
     error?: string;
     required?: boolean;
+    helpText?: string;  // Optional helper text shown below input
     children: React.ReactNode;
 }
 
@@ -17,6 +18,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                                                         name,
                                                         error,
                                                         required = false,
+                                                        helpText,
                                                         children,
                                                     }) => {
     return (
@@ -38,6 +40,17 @@ export const FormField: React.FC<FormFieldProps> = ({
                 )}
             </label>
             {children}
+            {helpText && !error && (
+                <p
+                    style={{
+                        margin: '0.25rem 0 0',
+                        fontSize: '0.75rem',
+                        color: 'var(--color-text-secondary)',
+                    }}
+                >
+                    {helpText}
+                </p>
+            )}
             {error && (
                 <p
                     style={{

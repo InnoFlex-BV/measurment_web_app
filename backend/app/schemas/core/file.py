@@ -67,7 +67,7 @@ class FileBase(BaseModel):
 
     # Checksum for integrity
     checksum: str = Field(
-        ...,
+        default="0",
         min_length=1,
         max_length=255,
         description="File checksum (SHA-256)",

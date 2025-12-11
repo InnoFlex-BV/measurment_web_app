@@ -1,5 +1,5 @@
 /**
- * Button - Reusable button component with variant and size support.
+ * Button - Reusable button component with variant, size, and loading support.
  */
 
 import React from 'react';
@@ -7,25 +7,52 @@ import React from 'react';
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'danger';
     size?: 'sm' | 'md' | 'lg';
+    isLoading?: boolean;
     children: React.ReactNode;
 }
+
+/**
+ * Simple loading spinner component
+ */
+const LoadingSpinner: React.FC<{ size: 'sm' | 'md' | 'lg' }> = ({ size }) => {
+    const spinnerSize = size === 'sm' ? '12px' : size === 'md' ? '14px' : '16px';
+
+    return (
+        <span
+            style={{
+                display: 'inline-block',
+                width: spinnerSize,
+                height: spinnerSize,
+                border: '2px solid currentColor',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                animation: 'button-spin 0.6s linear infinite',
+                marginRight: '0.5rem',
+            }}
+        />
+    );
+};
 
 export const Button: React.FC<ButtonProps> = ({
                                                   variant = 'primary',
                                                   size = 'md',
+                                                  isLoading = false,
                                                   children,
                                                   className = '',
                                                   style,
+                                                  disabled,
                                                   ...props
                                               }) => {
+    const isDisabled = disabled || isLoading;
+
     const baseStyles: React.CSSProperties = {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 'var(--border-radius)',
         fontWeight: 500,
-        cursor: props.disabled ? 'not-allowed' : 'pointer',
-        opacity: props.disabled ? 0.6 : 1,
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
+        opacity: isDisabled ? 0.6 : 1,
         border: 'none',
         transition: 'background-color 0.2s, opacity 0.2s',
     };
@@ -71,7 +98,13 @@ export const Button: React.FC<ButtonProps> = ({
     };
 
     return (
-        <button className={className} style={combinedStyles} {...props}>
+        <button
+            className={className}
+            style={combinedStyles}
+            disabled={isDisabled}
+            {...props}
+        >
+            {isLoading && <LoadingSpinner size={size} />}
             {children}
         </button>
     );

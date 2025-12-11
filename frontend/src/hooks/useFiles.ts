@@ -120,7 +120,7 @@ export function useRestoreFile(): UseMutationResult<FileMetadata, Error, number>
 }
 
 /**
- * Hook to permanently delete a file.
+ * Hook to permanently delete a file (hard delete).
  */
 export function useHardDeleteFile(): UseMutationResult<void, Error, number> {
     const queryClient = useQueryClient();

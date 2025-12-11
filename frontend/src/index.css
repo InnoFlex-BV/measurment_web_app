@@ -209,3 +209,9 @@ button a {
     background-color: var(--color-primary);
     color: white;
 }
+
+@keyframes button-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

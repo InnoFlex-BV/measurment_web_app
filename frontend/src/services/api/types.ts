@@ -57,7 +57,7 @@ export interface UserSimple {
 export interface FileMetadata {
     id: number;
     filename: string;
-    file_path: string;
+    storage_path: string;
     file_size: number;
     mime_type: string;
     uploaded_by_id?: number;
@@ -78,7 +78,7 @@ export interface FileMetadataSimple {
 
 export interface FileCreate {
     filename: string;
-    file_path: string;
+    storage_path: string;
     file_size: number;
     mime_type: string;
     uploaded_by_id?: number;
@@ -86,7 +86,7 @@ export interface FileCreate {
 
 export interface FileUpdate {
     filename?: string;
-    file_path?: string;
+    storage_path?: string;
 }
 
 // ============================================================================

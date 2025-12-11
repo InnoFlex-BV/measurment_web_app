@@ -7,7 +7,7 @@
 
 import React from 'react';
 
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     hasError?: boolean;
 }
 
@@ -22,7 +22,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                     padding: '0.5rem 0.75rem',
                     fontSize: '0.875rem',
                     lineHeight: '1.5',
-                    border: '1px solid var(--color-border, #d1d5db)',
+                    border: `1px solid ${hasError ? 'var(--color-danger)' : 'var(--color-border, #d1d5db)'}`,
                     borderRadius: 'var(--border-radius, 0.375rem)',
                     backgroundColor: 'white',
                     cursor: 'pointer',

@@ -40,7 +40,7 @@ export const FileFormPage: React.FC = () => {
     } = useForm<FileCreate>({
         defaultValues: {
             filename: '',
-            file_path: '',
+            storage_path: '',
             file_size: 0,
             mime_type: '',
             uploaded_by_id: undefined,
@@ -52,7 +52,7 @@ export const FileFormPage: React.FC = () => {
         if (file) {
             reset({
                 filename: file.filename,
-                file_path: file.file_path,
+                storage_path: file.storage_path,
                 file_size: file.file_size,
                 mime_type: file.mime_type,
                 uploaded_by_id: file.uploaded_by_id,
@@ -62,10 +62,10 @@ export const FileFormPage: React.FC = () => {
 
     const onSubmit = (data: FileCreate) => {
         if (isEditing && file) {
-            // Only filename and file_path can be updated
+            // Only filename and storage_path can be updated
             const updateData: FileUpdate = {
                 filename: data.filename,
-                file_path: data.file_path,
+                storage_path: data.storage_path,
             };
             updateMutation.mutate(
                 { id: file.id, data: updateData },
@@ -123,15 +123,15 @@ export const FileFormPage: React.FC = () => {
                     {/* File Path */}
                     <FormField
                         label="Storage Path"
-                        error={errors.file_path?.message}
+                        error={errors.storage_path?.message}
                         required
                     >
                         <TextInput
-                            {...register('file_path', {
+                            {...register('storage_path', {
                                 required: 'Storage path is required',
                             })}
                             placeholder="/storage/uploads/2024/01/example.pdf"
-                            hasError={!!errors.file_path}
+                            hasError={!!errors.storage_path}
                         />
                     </FormField>
 

@@ -10,7 +10,7 @@ import React from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useFile, useDeleteFile, useRestoreFile, useHardDeleteFile } from '@/hooks/useFiles';
 import { Button, Badge } from '@/components/common';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 
 /**
  * Format file size in human-readable format
@@ -21,6 +21,32 @@ function formatFileSize(bytes: number): string {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+/**
+ * Safely format a date string, handling null/undefined and invalid dates.
+ * Uses parseISO for proper ISO 8601 date parsing from API responses.
+ */
+function safeFormatDate(dateString: string | undefined | null, formatString: string = "MMMM d, yyyy 'at' h:mm a"): string {
+    if (!dateString) return 'Unknown';
+
+    try {
+        // Try parsing as ISO string first (recommended for API dates)
+        const date = parseISO(dateString);
+        if (isValid(date)) {
+            return format(date, formatString);
+        }
+
+        // Fallback to Date constructor
+        const fallbackDate = new Date(dateString);
+        if (isValid(fallbackDate)) {
+            return format(fallbackDate, formatString);
+        }
+
+        return 'Invalid date';
+    } catch {
+        return 'Invalid date';
+    }
 }
 
 export const FileDetailPage: React.FC = () => {
@@ -107,14 +133,14 @@ export const FileDetailPage: React.FC = () => {
                                 onClick={handleRestore}
                                 disabled={restoreMutation.isPending}
                             >
-                                Restore File
+                                {restoreMutation.isPending ? 'Restoring...' : 'Restore File'}
                             </Button>
                             <Button
                                 variant="danger"
                                 onClick={handleHardDelete}
                                 disabled={hardDeleteMutation.isPending}
                             >
-                                Delete Permanently
+                                {hardDeleteMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
                             </Button>
                         </>
                     ) : (
@@ -127,7 +153,7 @@ export const FileDetailPage: React.FC = () => {
                                 onClick={handleSoftDelete}
                                 disabled={deleteMutation.isPending}
                             >
-                                Delete
+                                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
                             </Button>
                         </>
                     )}
@@ -146,13 +172,13 @@ export const FileDetailPage: React.FC = () => {
                 >
                     <p style={{ margin: 0 }}>
                         <strong>This file has been deleted.</strong> It was deleted on{' '}
-                        {file.deleted_at ? format(new Date(file.deleted_at), 'MMMM d, yyyy \'at\' h:mm a') : 'unknown date'}.
+                        {safeFormatDate(file.deleted_at)}.
                         You can restore it or permanently delete it using the buttons above.
                     </p>
                 </div>
             )}
 
-            {/* File Information Cards */}
+            {/* File Information Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-lg)' }}>
                 {/* Basic Information */}
                 <div className="card">
@@ -170,25 +196,22 @@ export const FileDetailPage: React.FC = () => {
                             <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 MIME Type
                             </dt>
-                            <dd style={{ margin: 0, fontFamily: 'monospace' }}>{file.mime_type}</dd>
+                            <dd style={{ margin: 0 }}>
+                                <Badge variant="info">{file.mime_type}</Badge>
+                            </dd>
                         </div>
                         <div style={{ marginBottom: 'var(--spacing-sm)' }}>
                             <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 File Size
                             </dt>
-                            <dd style={{ margin: 0 }}>
-                                {formatFileSize(file.file_size)}
-                                <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', marginLeft: '0.5rem' }}>
-                                    ({file.file_size.toLocaleString()} bytes)
-                                </span>
-                            </dd>
+                            <dd style={{ margin: 0 }}>{formatFileSize(file.file_size)}</dd>
                         </div>
-                        <div>
+                        <div style={{ marginBottom: 'var(--spacing-sm)' }}>
                             <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Storage Path
                             </dt>
                             <dd style={{ margin: 0, fontFamily: 'monospace', fontSize: '0.875rem', wordBreak: 'break-all' }}>
-                                {file.file_path}
+                                {file.storage_path}
                             </dd>
                         </div>
                     </dl>
@@ -206,9 +229,7 @@ export const FileDetailPage: React.FC = () => {
                             </dt>
                             <dd style={{ margin: 0 }}>
                                 {file.uploader ? (
-                                    <Link to={`/users/${file.uploader.id}`} style={{ color: 'var(--color-primary)' }}>
-                                        {file.uploader.full_name || file.uploader.username}
-                                    </Link>
+                                    <span>{file.uploader.full_name} ({file.uploader.username})</span>
                                 ) : (
                                     <span style={{ color: 'var(--color-text-secondary)' }}>Unknown</span>
                                 )}
@@ -219,7 +240,7 @@ export const FileDetailPage: React.FC = () => {
                                 Created At
                             </dt>
                             <dd style={{ margin: 0 }}>
-                                {format(new Date(file.created_at), 'MMMM d, yyyy \'at\' h:mm a')}
+                                {safeFormatDate(file.created_at)}
                             </dd>
                         </div>
                         <div>
@@ -227,34 +248,29 @@ export const FileDetailPage: React.FC = () => {
                                 Last Updated
                             </dt>
                             <dd style={{ margin: 0 }}>
-                                {format(new Date(file.updated_at), 'MMMM d, yyyy \'at\' h:mm a')}
+                                {safeFormatDate(file.updated_at)}
                             </dd>
                         </div>
                     </dl>
                 </div>
             </div>
 
-            {/* File Preview Placeholder */}
-            <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                    File Preview
-                </h2>
-                <div style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    borderRadius: 'var(--border-radius)',
-                    padding: 'var(--spacing-xl)',
-                    textAlign: 'center',
-                    color: 'var(--color-text-secondary)',
-                }}>
+            {/* Error Display */}
+            {(deleteMutation.error || restoreMutation.error || hardDeleteMutation.error) && (
+                <div
+                    className="card"
+                    style={{
+                        backgroundColor: 'var(--color-danger)',
+                        color: 'white',
+                        marginTop: 'var(--spacing-lg)',
+                    }}
+                >
                     <p style={{ margin: 0 }}>
-                        File preview is not yet implemented.
-                        <br />
-                        <span style={{ fontSize: '0.875rem' }}>
-                            Preview would be available for supported file types (images, PDFs, text files).
-                        </span>
+                        <strong>Error:</strong>{' '}
+                        {deleteMutation.error?.message || restoreMutation.error?.message || hardDeleteMutation.error?.message}
                     </p>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

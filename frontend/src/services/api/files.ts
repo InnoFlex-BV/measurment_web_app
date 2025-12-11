@@ -43,7 +43,7 @@ export const create = async (data: FileCreate): Promise<FileMetadata> => {
 /**
  * Update file metadata.
  *
- * Only filename and file_path can be updated after creation.
+ * Only filename and storage_path can be updated after creation.
  */
 export const update = async (id: number, data: FileUpdate): Promise<FileMetadata> => {
     const response = await apiClient.patch(`/api/files/${id}`, data);
@@ -72,9 +72,11 @@ export const restore = async (id: number): Promise<FileMetadata> => {
  * Permanently delete a file (hard delete).
  *
  * Use with caution - this cannot be undone.
+ *
+ * NOTE: The backend API expects 'hard_delete' parameter, not 'permanent'
  */
 export const hardDelete = async (id: number): Promise<void> => {
-    await apiClient.delete(`/api/files/${id}`, { params: { permanent: true } });
+    await apiClient.delete(`/api/files/${id}`, { params: { hard_delete: true } });
 };
 
 export default {

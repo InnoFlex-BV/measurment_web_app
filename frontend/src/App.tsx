@@ -1,6 +1,7 @@
 /**
  * App - Main application component with routing configuration.
  *
+ * Phase 1 includes: Users (core)
  * Phase 2 includes: Files, Samples, Characterizations, Observations
  */
 
@@ -15,8 +16,11 @@ import { Layout } from '@/components/layout/Layout';
 // Pages
 import { HomePage } from '@/pages/HomePage';
 
-// Core domain pages (Phase 2)
+// Core domain pages (Phase 1 & 2)
 import {
+    UserListPage,
+    UserDetailPage,
+    UserFormPage,
     FileListPage,
     FileDetailPage,
     FileFormPage,
@@ -33,6 +37,18 @@ import {
     ObservationListPage,
     ObservationDetailPage,
     ObservationFormPage,
+    ChemicalListPage,
+    ChemicalDetailPage,
+    ChemicalFormPage,
+    MethodListPage,
+    MethodDetailPage,
+    MethodFormPage,
+    SupportListPage,
+    SupportDetailPage,
+    SupportFormPage,
+    CatalystListPage,
+    CatalystDetailPage,
+    CatalystFormPage,
 } from '@/pages/catalysts';
 
 // Create a React Query client with sensible defaults
@@ -76,8 +92,11 @@ const App: React.FC = () => {
                         {/* Core Domain Routes */}
                         {/* ============================================= */}
 
-                        {/* Users (placeholder) */}
-                        <Route path="users" element={<PlaceholderPage title="Users" />} />
+                        {/* Users */}
+                        <Route path="users" element={<UserListPage />} />
+                        <Route path="users/new" element={<UserFormPage />} />
+                        <Route path="users/:id" element={<UserDetailPage />} />
+                        <Route path="users/:id/edit" element={<UserFormPage />} />
 
                         {/* Files */}
                         <Route path="files" element={<FileListPage />} />
@@ -90,16 +109,28 @@ const App: React.FC = () => {
                         {/* ============================================= */}
 
                         {/* Chemicals (placeholder) */}
-                        <Route path="chemicals" element={<PlaceholderPage title="Chemicals" />} />
+                        <Route path="chemicals" element={<ChemicalListPage />} />
+                        <Route path="chemicals/new" element={<ChemicalFormPage />} />
+                        <Route path="chemicals/:id" element={<ChemicalDetailPage />} />
+                        <Route path="chemicals/:id/edit" element={<ChemicalFormPage />} />
 
                         {/* Methods (placeholder) */}
-                        <Route path="methods" element={<PlaceholderPage title="Methods" />} />
+                        <Route path="methods" element={<MethodListPage />} />
+                        <Route path="methods/new" element={<MethodFormPage />} />
+                        <Route path="methods/:id" element={<MethodDetailPage />} />
+                        <Route path="methods/:id/edit" element={<MethodFormPage />} />
 
                         {/* Supports (placeholder) */}
-                        <Route path="supports" element={<PlaceholderPage title="Supports" />} />
+                        <Route path="supports" element={<SupportListPage />} />
+                        <Route path="supports/new" element={<SupportFormPage />} />
+                        <Route path="supports/:id" element={<SupportDetailPage />} />
+                        <Route path="supports/:id/edit" element={<SupportFormPage />} />
 
                         {/* Catalysts (placeholder) */}
-                        <Route path="catalysts" element={<PlaceholderPage title="Catalysts" />} />
+                        <Route path="catalysts" element={<CatalystListPage />} />
+                        <Route path="catalysts/new" element={<CatalystFormPage />} />
+                        <Route path="catalysts/:id" element={<CatalystDetailPage />} />
+                        <Route path="catalysts/:id/edit" element={<CatalystFormPage />} />
 
                         {/* Samples */}
                         <Route path="samples" element={<SampleListPage />} />
