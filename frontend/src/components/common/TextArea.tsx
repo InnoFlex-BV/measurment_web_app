@@ -1,24 +1,38 @@
 /**
- * TextArea component - Styled textarea for multi-line text input.
- *
- * Used for fields like method procedures, catalyst notes, or support descriptions
- * where users need to enter multiple lines of text. The component automatically
- * sizes to fit content up to a maximum height.
+ * TextArea - Styled textarea component with error state support.
  */
 
-import React from 'react';
+import React, { forwardRef } from 'react';
 
-interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     hasError?: boolean;
 }
 
-export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
-    ({ hasError, className = '', ...props }, ref) => {
+export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
+    ({ hasError = false, className = '', style, ...props }, ref) => {
+        const textareaStyles: React.CSSProperties = {
+            width: '100%',
+            padding: '0.5rem 0.75rem',
+            fontSize: '0.875rem',
+            lineHeight: 1.5,
+            color: 'var(--color-text)',
+            backgroundColor: 'var(--color-bg)',
+            border: `1px solid ${hasError ? 'var(--color-danger)' : 'var(--color-border)'}`,
+            borderRadius: 'var(--border-radius)',
+            outline: 'none',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+            boxSizing: 'border-box',
+            resize: 'vertical',
+            minHeight: '80px',
+            fontFamily: 'inherit',
+            ...style,
+        };
+
         return (
             <textarea
                 ref={ref}
-                className={`textarea ${hasError ? 'input-error' : ''} ${className}`}
-                rows={5}
+                className={className}
+                style={textareaStyles}
                 {...props}
             />
         );
