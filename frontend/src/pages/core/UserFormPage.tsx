@@ -88,6 +88,7 @@ export const UserFormPage: React.FC = () => {
             if (isEditing && id) {
                 // Extract only the fields that can be updated (no username)
                 const updateData: UserUpdate = {
+                    username: data.username,
                     email: data.email,
                     full_name: data.full_name,
                     is_active: data.is_active,
@@ -131,29 +132,27 @@ export const UserFormPage: React.FC = () => {
 
             <div className="card">
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    {/* Username field - only shown when creating, can't be changed when editing */}
-                    {!isEditing && (
-                        <FormField
-                            label="Username"
-                            name="username"
-                            required
-                            error={errors.username?.message}
-                            helpText="Short identifier, typically matching network login"
-                        >
-                            <TextInput
-                                {...register('username', {
-                                    required: 'Username is required',
-                                    minLength: { value: 3, message: 'Username must be at least 3 characters' },
-                                    pattern: {
-                                        value: /^[a-zA-Z0-9_-]+$/,
-                                        message: 'Username can only contain letters, numbers, underscores, and hyphens',
-                                    },
-                                })}
-                                placeholder="jsmith"
-                                hasError={!!errors.username}
-                            />
-                        </FormField>
-                    )}
+                    {/* Username field */}
+                    <FormField
+                        label="Username"
+                        name="username"
+                        required
+                        error={errors.username?.message}
+                        helpText="Short identifier, typically matching network login"
+                    >
+                        <TextInput
+                            {...register('username', {
+                                required: 'Username is required',
+                                minLength: { value: 3, message: 'Username must be at least 3 characters' },
+                                pattern: {
+                                    value: /^[a-zA-Z0-9_-]+$/,
+                                    message: 'Username can only contain letters, numbers, underscores, and hyphens',
+                                },
+                            })}
+                            placeholder="jsmith"
+                            hasError={!!errors.username}
+                        />
+                    </FormField>
 
                     {/* Full name field */}
                     <FormField

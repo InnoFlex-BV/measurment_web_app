@@ -58,7 +58,7 @@ export const SampleFormPage: React.FC = () => {
             yield_amount: '',
             remaining_amount: '',
             storage_location: '',
-            preparation_notes: '',
+            notes: '',
         },
     });
 
@@ -77,7 +77,7 @@ export const SampleFormPage: React.FC = () => {
                 yield_amount: sample.yield_amount,
                 remaining_amount: sample.remaining_amount,
                 storage_location: sample.storage_location,
-                preparation_notes: sample.preparation_notes || '',
+                notes: sample.notes || '',
             });
         }
     }, [sample, reset]);
@@ -98,7 +98,7 @@ export const SampleFormPage: React.FC = () => {
                 yield_amount: data.yield_amount,
                 remaining_amount: data.remaining_amount,
                 storage_location: data.storage_location,
-                preparation_notes: data.preparation_notes || undefined,
+                notes: data.notes || undefined,
             };
             updateMutation.mutate(
                 { id: sample.id, data: updateData },
@@ -311,10 +311,10 @@ export const SampleFormPage: React.FC = () => {
                     {/* Preparation Notes */}
                     <FormField
                         label="Preparation Notes"
-                        error={errors.preparation_notes?.message}
+                        error={errors.notes?.message}
                     >
                         <TextArea
-                            {...register('preparation_notes')}
+                            {...register('notes')}
                             placeholder="Any additional notes about sample preparation..."
                             rows={4}
                         />

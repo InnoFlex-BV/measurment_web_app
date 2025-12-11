@@ -50,11 +50,11 @@ export const SampleListPage: React.FC = () => {
     /**
      * Calculate usage percentage for display
      */
-    const getUsagePercentage = (sample: Sample): number => {
+    const getRemainingPercentage = (sample: Sample): number => {
         const yield_amt = parseFloat(sample.yield_amount);
         const remaining = parseFloat(sample.remaining_amount);
         if (yield_amt === 0) return 0;
-        return Math.round(((yield_amt - remaining) / yield_amt) * 100);
+        return Math.round((remaining / yield_amt) * 100);
     };
 
     return (
@@ -205,7 +205,7 @@ export const SampleListPage: React.FC = () => {
                                                         {parseFloat(sample.remaining_amount).toFixed(2)} g
                                                     </span>
                                                 <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginLeft: '0.5rem' }}>
-                                                        ({getUsagePercentage(sample)}% used)
+                                                        ({getRemainingPercentage(sample)}% left)
                                                     </span>
                                             </td>
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>

@@ -64,12 +64,11 @@ export const SampleDetailPage: React.FC = () => {
      * Calculate usage statistics
      */
     const getUsageStats = () => {
-        if (!sample) return { used: 0, remaining: 0, total: 0, percentage: 0 };
+        if (!sample) return { remaining: 0, total: 0, percentage: 0 };
         const total = parseFloat(sample.yield_amount);
         const remaining = parseFloat(sample.remaining_amount);
-        const used = total - remaining;
-        const percentage = total > 0 ? Math.round((used / total) * 100) : 0;
-        return { used, remaining, total, percentage };
+        const percentage = total > 0 ? Math.round((remaining / total) * 100) : 0;
+        return { remaining, total, percentage };
     };
 
     if (isLoading) {
@@ -168,14 +167,6 @@ export const SampleDetailPage: React.FC = () => {
                                 {format(new Date(sample.created_at), 'MMMM d, yyyy \'at\' h:mm a')}
                             </dd>
                         </div>
-                        {sample.preparation_notes && (
-                            <div>
-                                <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Preparation Notes
-                                </dt>
-                                <dd style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{sample.preparation_notes}</dd>
-                            </div>
-                        )}
                     </dl>
                 </div>
 
@@ -188,15 +179,14 @@ export const SampleDetailPage: React.FC = () => {
                     {/* Usage Bar */}
                     <div style={{ marginBottom: 'var(--spacing-md)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
-                            <span>Usage: {stats.percentage}%</span>
-                            <span>{stats.remaining.toFixed(2)}g remaining</span>
+                            <span>Remaining: {stats.percentage}%</span>
                         </div>
                         <div style={{ height: '8px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '4px', overflow: 'hidden' }}>
                             <div
                                 style={{
                                     height: '100%',
                                     width: `${stats.percentage}%`,
-                                    backgroundColor: stats.percentage >= 90 ? 'var(--color-danger)' : stats.percentage >= 70 ? 'var(--color-warning)' : 'var(--color-success)',
+                                    backgroundColor: stats.percentage <= 10 ? 'var(--color-danger)' : stats.percentage <= 70 ? 'var(--color-warning)' : 'var(--color-success)',
                                     transition: 'width 0.3s ease',
                                 }}
                             />
@@ -324,6 +314,20 @@ export const SampleDetailPage: React.FC = () => {
                 </div>
             </div>
 
+            {/* Notes Section */}
+            <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
+                        Notes
+                    </h2>
+                </div>
+                <div>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--color-text)', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                        {sample.notes || 'No notes added for this sample.'}
+                    </p>
+                </div>
+            </div>
+            
             {/* Characterizations Section */}
             <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>

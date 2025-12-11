@@ -86,10 +86,15 @@ export const UserDetailPage: React.FC = () => {
 
             {/* User details card */}
             <div className="card">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-lg)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-lg)' }}>
                     <div>
                         <label className="form-label">Username</label>
                         <p style={{ fontSize: '0.875rem', color: 'var(--color-text)' }}>{user.username}</p>
+                    </div>
+                    
+                    <div>
+                        <label className="form-label">Full Name</label>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--color-text)' }}>{user.full_name}</p>
                     </div>
 
                     <div>
@@ -104,16 +109,16 @@ export const UserDetailPage: React.FC = () => {
                     <div>
                         <label className="form-label">Status</label>
                         <p style={{ fontSize: '0.875rem', color: 'var(--color-text)' }}>
-              <span style={{
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '0.25rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                  backgroundColor: user.is_active ? 'var(--color-success)' : 'var(--color-secondary)',
-                  color: 'white'
-              }}>
-                {user.is_active ? 'Active' : 'Inactive'}
-              </span>
+                          <span style={{
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.75rem',
+                              fontWeight: 500,
+                              backgroundColor: user.is_active ? 'var(--color-success)' : 'var(--color-secondary)',
+                              color: 'white'
+                          }}>
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </span>
                         </p>
                     </div>
 
@@ -123,9 +128,9 @@ export const UserDetailPage: React.FC = () => {
                             {new Date(user.created_at).toLocaleString()}
                         </p>
                     </div>
-
+                    
                     <div>
-                        <label className="form-label">Last Updated</label>
+                        <label className="form-label">Updated</label>
                         <p style={{ fontSize: '0.875rem', color: 'var(--color-text)' }}>
                             {new Date(user.updated_at).toLocaleString()}
                         </p>

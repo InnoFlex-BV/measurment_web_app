@@ -39,6 +39,7 @@ export interface UserCreate {
 }
 
 export interface UserUpdate {
+    username?: string;
     email?: string;
     full_name?: string;
     is_active?: boolean;
@@ -251,7 +252,7 @@ export interface Sample {
     yield_amount: string;
     remaining_amount: string;
     storage_location: string;
-    preparation_notes?: string;
+    notes?: string;
     created_at: string;
     updated_at: string;
     // Computed properties
@@ -276,7 +277,7 @@ export interface SampleCreate {
     yield_amount: number | string;
     remaining_amount?: number | string;
     storage_location: string;
-    preparation_notes?: string;
+    notes?: string;
 }
 
 export interface SampleUpdate {
@@ -287,7 +288,7 @@ export interface SampleUpdate {
     yield_amount?: number | string;
     remaining_amount?: number | string;
     storage_location?: string;
-    preparation_notes?: string;
+    notes?: string;
 }
 
 // ============================================================================
