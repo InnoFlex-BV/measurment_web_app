@@ -169,12 +169,12 @@ The API uses standard HTTP status codes:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
-            "http://localhost:3000",      # React development server
-            "http://localhost:5173",      # Vite development server
-            "http://localhost:8080",      # Alternative port
+            "http://192.168.0.4:3000",
+            "http://localhost:3000",      # react development server
+            "http://localhost:5173",      # vite development server
+            "http://localhost:8080",      # alternative port
             "http://127.0.0.1:3000",
             "http://127.0.0.1:5173",
-            # Add production frontend URL here
         ],
         allow_credentials=True,
         allow_methods=["*"],

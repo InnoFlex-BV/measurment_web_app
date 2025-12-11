@@ -55,8 +55,11 @@ class Settings:
 
     # CORS configuration for frontend communication
     # In production, this should be your actual frontend domain
-    CORS_ORIGINS: list = [os.getenv("REACT_APP_API_URL")]
-
+    CORS_ORIGINS: list = [
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    ]
+    
     @property
     def is_development(self) -> bool:
         """Check if running in development environment."""
