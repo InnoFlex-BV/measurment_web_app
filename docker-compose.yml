@@ -71,8 +71,8 @@ services:
       - ./backend:/app
     
     # Expose FastAPI server to host machine
-    ports:
-      - "${BACKEND_PORT}:8000"
+    expose:
+      - "8000"
     
     # Override default command to run development server with auto-reload
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -111,13 +111,27 @@ services:
       # This creates an anonymous volume that stays inside the container
       - /app/node_modules
     
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+    expose:
+      - "3000"  # Only accessible within Docker network
     
     # Start Vite development server
     # This overrides the CMD in Dockerfile
     command: npm run dev
     
+    networks:
+      - lab_network
+  
+  nginx:
+    image: nginx:alpine
+    container_name: lab_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
     networks:
       - lab_network
 

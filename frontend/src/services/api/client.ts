@@ -83,7 +83,7 @@ function transformError(error: AxiosError): ApiError {
  * this would be set via environment variable to point to the deployed API.
  */
 const apiClient: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     },
