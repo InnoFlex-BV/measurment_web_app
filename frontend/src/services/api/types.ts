@@ -530,30 +530,47 @@ export interface ReactorListParams {
 // Processed Types (Phase 3 - Experiments Domain)
 // ============================================================================
 
+/**
+ * Processed results store calculated performance metrics from experiments.
+ *
+ * DRE (Decomposition/Removal Efficiency): Percentage of contaminant decomposed
+ * EY (Energy Yield): Mass decomposed per unit energy (g/kWh)
+ */
 export interface Processed {
     id: number;
-    data: Record<string, unknown>;  // JSONB flexible data
-    created_at: string;
-    updated_at: string;
+    dre?: string | null;        // Decomposition/Removal Efficiency (%)
+    ey?: string | null;         // Energy Yield (g/kWh)
+    has_dre?: boolean | null;   // Whether DRE is recorded
+    has_ey?: boolean | null;    // Whether EY is recorded
+    is_complete?: boolean | null; // Whether both metrics recorded
     // Optional nested data
     experiments?: ExperimentSimple[];
 }
 
 export interface ProcessedSimple {
     id: number;
+    dre?: string | null;
+    ey?: string | null;
 }
 
 export interface ProcessedCreate {
-    data: Record<string, unknown>;
+    dre?: number | string;
+    ey?: number | string;
 }
 
 export interface ProcessedUpdate {
-    data?: Record<string, unknown>;
+    dre?: number | string | null;
+    ey?: number | string | null;
 }
 
 export interface ProcessedListParams {
     skip?: number;
     limit?: number;
+    min_dre?: number;
+    max_dre?: number;
+    min_ey?: number;
+    max_ey?: number;
+    complete_only?: boolean;
     include?: string;
 }
 

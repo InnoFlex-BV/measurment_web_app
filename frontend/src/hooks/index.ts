@@ -35,6 +35,7 @@ export * from './useObservations';
 // ============================================================================
 export * from './useWaveforms';
 export * from './useReactors';
+export * from './useProcessed';
 export * from './useAnalyzers';
 export * from './useExperiments';
 

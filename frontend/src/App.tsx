@@ -60,6 +60,9 @@ import {
     ReactorListPage,
     ReactorDetailPage,
     ReactorFormPage,
+    ProcessedListPage,
+    ProcessedDetailPage,
+    ProcessedFormPage,
     AnalyzerListPage,
     AnalyzerDetailPage,
     AnalyzerFormPage,
@@ -194,6 +197,12 @@ const App: React.FC = () => {
                         <Route path="analyzers/new" element={<AnalyzerFormPage />} />
                         <Route path="analyzers/:id" element={<AnalyzerDetailPage />} />
                         <Route path="analyzers/:id/edit" element={<AnalyzerFormPage />} />
+
+                        {/* Processed Results */}
+                        <Route path="processed" element={<ProcessedListPage />} />
+                        <Route path="processed/new" element={<ProcessedFormPage />} />
+                        <Route path="processed/:id" element={<ProcessedDetailPage />} />
+                        <Route path="processed/:id/edit" element={<ProcessedFormPage />} />
 
                         {/* ============================================= */}
                         {/* Reference Domain Routes (Phase 3) */}

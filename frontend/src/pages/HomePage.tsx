@@ -15,6 +15,7 @@ import { useObservations } from '@/hooks/useObservations';
 import { useCatalysts } from '@/hooks/useCatalysts';
 import { useExperiments } from '@/hooks/useExperiments';
 import { useGroups } from '@/hooks/useGroups';
+import { useProcessedResults } from '@/hooks/useProcessed';
 import { useWaveforms } from '@/hooks/useWaveforms';
 import { useReactors } from '@/hooks/useReactors';
 import { useAnalyzers } from '@/hooks/useAnalyzers';
@@ -132,6 +133,7 @@ export const HomePage: React.FC = () => {
     // Phase 3 data
     const { data: experiments, isLoading: loadingExperiments } = useExperiments({});
     const { data: groups, isLoading: loadingGroups } = useGroups({});
+    const { data: processedResults, isLoading: loadingProcessed } = useProcessedResults({});
     const { data: waveforms, isLoading: loadingWaveforms } = useWaveforms({});
     const { data: reactors, isLoading: loadingReactors } = useReactors({});
     const { data: analyzers, isLoading: loadingAnalyzers } = useAnalyzers({});
@@ -144,6 +146,7 @@ export const HomePage: React.FC = () => {
     const inProgressExperiments = experiments?.filter(e => !e.has_conclusion).length ?? 0;
     const plasmaExperiments = experiments?.filter(e => e.experiment_type === 'plasma').length ?? 0;
     const photocatalysisExperiments = experiments?.filter(e => e.experiment_type === 'photocatalysis').length ?? 0;
+    // const completeResults = processedResults?.filter(r => r.is_complete).length ?? 0;
 
     return (
         <div className="container">
@@ -199,6 +202,14 @@ export const HomePage: React.FC = () => {
                         linkTo="/groups"
                         color="#e3f2fd"
                         icon="📊"
+                    />
+                    <StatCard
+                        title="Results"
+                        count={processedResults?.length}
+                        isLoading={loadingProcessed}
+                        linkTo="/processed"
+                        color="#fce4ec"
+                        icon="📈"
                     />
                 </div>
 

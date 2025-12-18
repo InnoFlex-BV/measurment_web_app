@@ -1,5 +1,5 @@
 /**
- * Experiments domain pages - Waveforms, Reactors, Analyzers, Experiments
+ * Experiments domain pages - Waveforms, Reactors, Processed, Analyzers, Experiments
  */
 
 // Waveform pages
@@ -11,6 +11,11 @@ export { WaveformFormPage } from './WaveformFormPage';
 export { ReactorListPage } from './ReactorListPage';
 export { ReactorDetailPage } from './ReactorDetailPage';
 export { ReactorFormPage } from './ReactorFormPage';
+
+// Processed Results pages
+export { ProcessedListPage } from './ProcessedListPage';
+export { ProcessedDetailPage } from './ProcessedDetailPage';
+export { ProcessedFormPage } from './ProcessedFormPage';
 
 // Analyzer pages (polymorphic: FTIR, OES)
 export { AnalyzerListPage } from './AnalyzerListPage';

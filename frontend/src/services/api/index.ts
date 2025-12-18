@@ -32,6 +32,7 @@ export { default as observationApi } from './observations';
 // Experiments domain services (Phase 3)
 export { default as waveformApi } from './waveforms';
 export { default as reactorApi } from './reactors';
+export { default as processedApi } from './processed';
 export { default as analyzerApi } from './analyzers';
 export { default as experimentApi } from './experiments';
 

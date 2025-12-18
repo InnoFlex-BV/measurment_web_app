@@ -47,19 +47,43 @@ class ProcessedBase(BaseModel):
 class ProcessedCreate(ProcessedBase):
     """
     Schema for creating a new processed result record.
+
+    Optionally link experiments during creation by providing their IDs.
+    The experiments' processed_table_id will be set to the new record.
     """
-    pass
+
+    # Optional: Link experiments during creation
+    experiment_ids: Optional[List[int]] = Field(
+        default=None,
+        description="IDs of experiments to link to this processed result. "
+                    "Each experiment's processed_table_id will be updated.",
+        examples=[[1, 2, 3]]
+    )
 
 
 class ProcessedUpdate(BaseModel):
     """
     Schema for updating processed results.
-    
+
     All fields optional for partial updates.
+
+    When experiment_ids is provided:
+    - All currently linked experiments are unlinked (processed_table_id set to NULL)
+    - The specified experiments are linked to this processed result
+    - Use an empty list [] to unlink all experiments
+    - Omit the field entirely to leave experiment links unchanged
     """
 
     dre: Optional[Decimal] = None
     ey: Optional[Decimal] = None
+
+    # Optional: Update linked experiments
+    experiment_ids: Optional[List[int]] = Field(
+        default=None,
+        description="IDs of experiments to link. Replaces all existing links. "
+                    "Use [] to unlink all experiments.",
+        examples=[[1, 2, 3]]
+    )
 
 
 class ProcessedSimple(BaseModel):
@@ -77,7 +101,7 @@ class ProcessedSimple(BaseModel):
 class ProcessedResponse(ProcessedBase):
     """
     Complete schema for processed data returned by the API.
-    
+
     Note: No timestamps since the database table doesn't have them.
     """
 

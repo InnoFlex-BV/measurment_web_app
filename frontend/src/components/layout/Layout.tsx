@@ -119,6 +119,9 @@ export const Layout: React.FC = () => {
                     <NavLink to="/groups" style={navLinkStyle}>
                         Groups
                     </NavLink>
+                    <NavLink to="/processed" style={navLinkStyle}>
+                        Results
+                    </NavLink>
 
                     {/* Equipment Section (Phase 3) */}
                     <div style={sectionTitleStyle}>Equipment</div>
