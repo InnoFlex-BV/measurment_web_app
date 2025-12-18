@@ -1,56 +1,38 @@
 /**
- * WaveformListPage - List view for all waveforms.
+ * CarrierListPage - List view for all carrier gases.
  *
- * Waveforms define electrical signal parameters used in plasma experiments.
- * They capture AC and pulsing characteristics that control plasma discharge.
+ * Carriers are the gases used as the main flow in experiments,
+ * carrying the contaminants through the reactor (e.g., N2, Ar, Air).
  */
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useWaveforms, useDeleteWaveform } from '@/hooks/useWaveforms';
-import { Button, TextInput }  from '@/components/common';
-import type { Waveform } from '@/services/api';
+import { useCarriers, useDeleteCarrier } from '@/hooks/useCarriers.ts';
+import { Button, TextInput } from '@/components/common';
+import type { Carrier } from '@/services/api';
 import { format } from 'date-fns';
 
-export const WaveformListPage: React.FC = () => {
+export const CarrierListPage: React.FC = () => {
     const [search, setSearch] = useState('');
 
-    const { data: waveforms, isLoading, error } = useWaveforms({ search: search || undefined });
-    const deleteMutation = useDeleteWaveform();
+    const { data: carriers, isLoading, error } = useCarriers({ search: search || undefined });
+    const deleteMutation = useDeleteCarrier();
 
-    const handleDelete = (waveform: Waveform) => {
-        if (window.confirm(`Are you sure you want to delete waveform "${waveform.name}"?`)) {
-            deleteMutation.mutate({ id: waveform.id });
+    const handleDelete = (carrier: Carrier) => {
+        if (window.confirm(`Are you sure you want to delete carrier "${carrier.name}"?`)) {
+            deleteMutation.mutate({ id: carrier.id });
         }
-    };
-
-    /**
-     * Format frequency for display
-     */
-    const formatFrequency = (freq?: string): string => {
-        if (!freq) return '-';
-        const val = parseFloat(freq);
-        if (val >= 1000) return `${(val / 1000).toFixed(1)} kHz`;
-        return `${val} Hz`;
-    };
-
-    /**
-     * Format duty cycle for display
-     */
-    const formatDutyCycle = (dc?: string): string => {
-        if (!dc) return '-';
-        return `${parseFloat(dc).toFixed(1)}%`;
     };
 
     return (
         <div className="container">
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h1 className="page-title">Waveforms</h1>
-                    <p className="page-description">Electrical signal configurations for plasma experiments</p>
+                    <h1 className="page-title">Carriers</h1>
+                    <p className="page-description">Carrier gases used in experiments</p>
                 </div>
-                <Link to="/waveforms/new">
-                    <Button variant="primary">Add Waveform</Button>
+                <Link to="/carriers/new">
+                    <Button variant="primary">Add Carrier</Button>
                 </Link>
             </div>
 
@@ -58,7 +40,7 @@ export const WaveformListPage: React.FC = () => {
                 <label className="form-label">Search</label>
                 <TextInput
                     type="text"
-                    placeholder="Search by waveform name..."
+                    placeholder="Search by carrier name..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -66,29 +48,29 @@ export const WaveformListPage: React.FC = () => {
 
             {isLoading && (
                 <div className="loading-container">
-                    <p>Loading waveforms...</p>
+                    <p>Loading carriers...</p>
                 </div>
             )}
 
             {error && (
                 <div className="card" style={{ backgroundColor: 'var(--color-danger)', color: 'white', padding: 'var(--spacing-md)' }}>
-                    <p>Error loading waveforms. Please try again.</p>
+                    <p>Error loading carriers. Please try again.</p>
                 </div>
             )}
 
-            {waveforms && (
+            {carriers && (
                 <>
-                    {waveforms.length === 0 ? (
+                    {carriers.length === 0 ? (
                         <div className="empty-state">
-                            <h3 className="empty-state-title">No waveforms found</h3>
+                            <h3 className="empty-state-title">No carriers found</h3>
                             <p className="empty-state-description">
                                 {search
                                     ? 'Try adjusting your search terms.'
-                                    : 'Get started by adding your first waveform configuration.'}
+                                    : 'Get started by adding your first carrier gas.'}
                             </p>
                             {!search && (
-                                <Link to="/waveforms/new">
-                                    <Button variant="primary">Add First Waveform</Button>
+                                <Link to="/carriers/new">
+                                    <Button variant="primary">Add First Carrier</Button>
                                 </Link>
                             )}
                         </div>
@@ -98,41 +80,33 @@ export const WaveformListPage: React.FC = () => {
                                 <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>AC Frequency</th>
-                                    <th>AC Duty Cycle</th>
-                                    <th>Pulsing Freq</th>
-                                    <th>Pulsing Duty</th>
                                     <th>Created</th>
                                     <th style={{ width: '150px' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {waveforms.map((waveform) => (
-                                    <tr key={waveform.id}>
+                                {carriers.map((carrier) => (
+                                    <tr key={carrier.id}>
                                         <td>
                                             <Link
-                                                to={`/waveforms/${waveform.id}`}
+                                                to={`/carriers/${carrier.id}`}
                                                 style={{ color: 'var(--color-primary)', fontWeight: 500 }}
                                             >
-                                                {waveform.name}
+                                                {carrier.name}
                                             </Link>
                                         </td>
-                                        <td>{formatFrequency(waveform.ac_frequency)}</td>
-                                        <td>{formatDutyCycle(waveform.ac_duty_cycle)}</td>
-                                        <td>{formatFrequency(waveform.pulsing_frequency)}</td>
-                                        <td>{formatDutyCycle(waveform.pulsing_duty_cycle)}</td>
                                         <td style={{ color: 'var(--color-text-secondary)' }}>
-                                            {format(new Date(waveform.created_at), 'MMM d, yyyy')}
+                                            {format(new Date(carrier.created_at), 'MMM d, yyyy')}
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                                                <Link to={`/waveforms/${waveform.id}/edit`}>
+                                                <Link to={`/carriers/${carrier.id}/edit`}>
                                                     <Button variant="secondary" size="sm">Edit</Button>
                                                 </Link>
                                                 <Button
                                                     variant="danger"
                                                     size="sm"
-                                                    onClick={() => handleDelete(waveform)}
+                                                    onClick={() => handleDelete(carrier)}
                                                     disabled={deleteMutation.isPending}
                                                 >
                                                     Delete
@@ -146,7 +120,7 @@ export const WaveformListPage: React.FC = () => {
                         </div>
                     )}
                     <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
-                        {waveforms.length} waveform{waveforms.length !== 1 ? 's' : ''}
+                        {carriers.length} carrier{carriers.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

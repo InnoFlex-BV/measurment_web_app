@@ -171,7 +171,7 @@ The API uses standard HTTP status codes:
         allow_origins=[
             "http://lims.local:80",
             # "http://localhost:3000",      # react development server
-            # "http://localhost:80",      # react development server
+            "http://localhost:80",      # react development server
         ],
         allow_credentials=True,
         allow_methods=["*"],

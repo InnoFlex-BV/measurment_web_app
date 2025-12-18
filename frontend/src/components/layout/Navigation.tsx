@@ -1,31 +1,34 @@
 /**
  * Navigation component - Top-level navigation for the entire application.
  *
- * This component provides the main navigation structure that appears on every
- * page. It's organized by domain (Core, Catalysts) to match the backend
- * structure, making it intuitive for users who understand the domain model.
- *
- * As you add more entities in future phases, you'll add new navigation sections
- * here. The pattern scales well because related entities are grouped together,
- * preventing the navigation from becoming an overwhelming flat list.
+ * Organized by domain:
+ * - Core: Users, Files
+ * - Catalysts: Chemicals, Methods, Supports, Catalysts, Samples
+ * - Characterization: Characterizations, Observations
+ * - Experiments: Experiments, Waveforms, Reactors, Analyzers
+ * - Reference: Contaminants, Carriers, Groups
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 export const Navigation: React.FC = () => {
     const location = useLocation();
+    const [expandedSections, setExpandedSections] = useState<string[]>(['experiments']);
 
-    /**
-     * Helper function to determine if a link is currently active.
-     *
-     * This checks if the current path starts with the link's path, which means
-     * the link is active for both the list page and any detail pages. For example,
-     * /catalysts is active for both /catalysts (list) and /catalysts/1 (detail).
-     */
     const isActive = (path: string): boolean => {
         return location.pathname.startsWith(path);
     };
+
+    const toggleSection = (section: string) => {
+        setExpandedSections(prev =>
+            prev.includes(section)
+                ? prev.filter(s => s !== section)
+                : [...prev, section]
+        );
+    };
+
+    const isSectionExpanded = (section: string) => expandedSections.includes(section);
 
     return (
         <nav className="nav">
@@ -36,7 +39,7 @@ export const Navigation: React.FC = () => {
                     </Link>
 
                     <ul className="nav-list">
-                        {/* Core domain navigation */}
+                        {/* Core domain */}
                         <li>
                             <Link
                                 to="/users"
@@ -45,8 +48,19 @@ export const Navigation: React.FC = () => {
                                 Users
                             </Link>
                         </li>
+                        <li>
+                            <Link
+                                to="/files"
+                                className={`nav-link ${isActive('/files') ? 'active' : ''}`}
+                            >
+                                Files
+                            </Link>
+                        </li>
 
-                        {/* Catalysts domain navigation */}
+                        {/* Divider */}
+                        <li style={{ borderLeft: '1px solid var(--color-border)', height: '1.5rem', margin: '0 0.5rem' }} />
+
+                        {/* Catalysts domain */}
                         <li>
                             <Link
                                 to="/chemicals"
@@ -79,13 +93,180 @@ export const Navigation: React.FC = () => {
                                 Catalysts
                             </Link>
                         </li>
+                        <li>
+                            <Link
+                                to="/samples"
+                                className={`nav-link ${isActive('/samples') ? 'active' : ''}`}
+                            >
+                                Samples
+                            </Link>
+                        </li>
 
-                        {/* TODO: Phase 2 - Add Samples, Characterizations, Observations */}
-                        {/* TODO: Phase 3 - Add Experiments, Reactors, Analyzers */}
-                        {/* TODO: Phase 4 - Add Contaminants, Carriers, Waveforms, Groups */}
+                        {/* Divider */}
+                        <li style={{ borderLeft: '1px solid var(--color-border)', height: '1.5rem', margin: '0 0.5rem' }} />
+
+                        {/* Characterization domain */}
+                        <li>
+                            <Link
+                                to="/characterizations"
+                                className={`nav-link ${isActive('/characterizations') ? 'active' : ''}`}
+                            >
+                                Characterizations
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
+                                to="/observations"
+                                className={`nav-link ${isActive('/observations') ? 'active' : ''}`}
+                            >
+                                Observations
+                            </Link>
+                        </li>
+
+                        {/* Divider */}
+                        <li style={{ borderLeft: '1px solid var(--color-border)', height: '1.5rem', margin: '0 0.5rem' }} />
+
+                        {/* Experiments domain - highlighted as main feature */}
+                        <li>
+                            <Link
+                                to="/experiments"
+                                className={`nav-link ${isActive('/experiments') ? 'active' : ''}`}
+                                style={{ fontWeight: 600 }}
+                            >
+                                Experiments
+                            </Link>
+                        </li>
+
+                        {/* Dropdown for experiment infrastructure */}
+                        <li className="nav-dropdown">
+                            <button
+                                onClick={() => toggleSection('equipment')}
+                                className="nav-link"
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                }}
+                            >
+                                Equipment
+                                <span style={{ fontSize: '0.75rem' }}>{isSectionExpanded('equipment') ? '▲' : '▼'}</span>
+                            </button>
+                            {isSectionExpanded('equipment') && (
+                                <ul className="nav-dropdown-menu">
+                                    <li>
+                                        <Link
+                                            to="/waveforms"
+                                            className={`nav-dropdown-link ${isActive('/waveforms') ? 'active' : ''}`}
+                                        >
+                                            Waveforms
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/reactors"
+                                            className={`nav-dropdown-link ${isActive('/reactors') ? 'active' : ''}`}
+                                        >
+                                            Reactors
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/analyzers"
+                                            className={`nav-dropdown-link ${isActive('/analyzers') ? 'active' : ''}`}
+                                        >
+                                            Analyzers
+                                        </Link>
+                                    </li>
+                                </ul>
+                            )}
+                        </li>
+
+                        {/* Dropdown for reference data */}
+                        <li className="nav-dropdown">
+                            <button
+                                onClick={() => toggleSection('reference')}
+                                className="nav-link"
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                }}
+                            >
+                                Reference
+                                <span style={{ fontSize: '0.75rem' }}>{isSectionExpanded('reference') ? '▲' : '▼'}</span>
+                            </button>
+                            {isSectionExpanded('reference') && (
+                                <ul className="nav-dropdown-menu">
+                                    <li>
+                                        <Link
+                                            to="/contaminants"
+                                            className={`nav-dropdown-link ${isActive('/contaminants') ? 'active' : ''}`}
+                                        >
+                                            Contaminants
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/carriers"
+                                            className={`nav-dropdown-link ${isActive('/carriers') ? 'active' : ''}`}
+                                        >
+                                            Carriers
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            to="/groups"
+                                            className={`nav-dropdown-link ${isActive('/groups') ? 'active' : ''}`}
+                                        >
+                                            Groups
+                                        </Link>
+                                    </li>
+                                </ul>
+                            )}
+                        </li>
                     </ul>
                 </div>
             </div>
+
+            {/* Dropdown styles */}
+            <style>{`
+                .nav-dropdown {
+                    position: relative;
+                }
+                .nav-dropdown-menu {
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    background: var(--color-bg);
+                    border: 1px solid var(--color-border);
+                    border-radius: var(--border-radius);
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    list-style: none;
+                    padding: 0.5rem 0;
+                    margin: 0;
+                    min-width: 150px;
+                    z-index: 100;
+                }
+                .nav-dropdown-link {
+                    display: block;
+                    padding: 0.5rem 1rem;
+                    color: var(--color-text);
+                    text-decoration: none;
+                }
+                .nav-dropdown-link:hover {
+                    background: var(--color-bg-secondary);
+                }
+                .nav-dropdown-link.active {
+                    color: var(--color-primary);
+                    font-weight: 500;
+                }
+            `}</style>
         </nav>
     );
 };

@@ -6,8 +6,8 @@
  * remembering individual service paths.
  *
  * Usage:
- * import { userApi, catalystApi, sampleApi } from '@/services/api';
- * import type { User, Catalyst, Sample } from '@/services/api';
+ * import { userApi, catalystApi, experimentApi } from '@/services/api';
+ * import type { User, Catalyst, Experiment } from '@/services/api';
  */
 
 // ============================================================================
@@ -28,6 +28,17 @@ export { default as sampleApi } from './samples';
 // Characterization domain services
 export { default as characterizationApi } from './characterizations';
 export { default as observationApi } from './observations';
+
+// Experiments domain services (Phase 3)
+export { default as waveformApi } from './waveforms';
+export { default as reactorApi } from './reactors';
+export { default as analyzerApi } from './analyzers';
+export { default as experimentApi } from './experiments';
+
+// Reference domain services (Phase 3)
+export { default as contaminantApi } from './contaminants';
+export { default as carrierApi } from './carriers';
+export { default as groupApi } from './groups';
 
 // Export the API client and error type
 export { default as apiClient } from './client';
@@ -91,6 +102,85 @@ export type {
     ObservationCreate,
     ObservationUpdate,
 
+    // Waveform types (Phase 3)
+    Waveform,
+    WaveformSimple,
+    WaveformCreate,
+    WaveformUpdate,
+    WaveformListParams,
+
+    // Reactor types (Phase 3)
+    Reactor,
+    ReactorSimple,
+    ReactorCreate,
+    ReactorUpdate,
+    ReactorListParams,
+
+    // Processed types (Phase 3)
+    Processed,
+    ProcessedSimple,
+    ProcessedCreate,
+    ProcessedUpdate,
+    ProcessedListParams,
+
+    // Analyzer types (Phase 3 - polymorphic)
+    AnalyzerType,
+    AnalyzerBase,
+    FTIRAnalyzer,
+    OESAnalyzer,
+    Analyzer,
+    AnalyzerSimple,
+    FTIRCreate,
+    OESCreate,
+    AnalyzerCreate,
+    FTIRUpdate,
+    OESUpdate,
+    AnalyzerUpdate,
+    AnalyzerListParams,
+
+    // Contaminant types (Phase 3)
+    Contaminant,
+    ContaminantSimple,
+    ContaminantWithPpm,
+    ContaminantCreate,
+    ContaminantUpdate,
+    ContaminantListParams,
+    ContaminantExperimentData,
+
+    // Carrier types (Phase 3)
+    Carrier,
+    CarrierSimple,
+    CarrierWithRatio,
+    CarrierCreate,
+    CarrierUpdate,
+    CarrierListParams,
+    CarrierExperimentData,
+
+    // Group types (Phase 3)
+    Group,
+    GroupSimple,
+    GroupCreate,
+    GroupUpdate,
+    GroupListParams,
+
+    // Experiment types (Phase 3 - polymorphic)
+    ExperimentType,
+    ExperimentSimple,
+    ExperimentBase,
+    PlasmaExperiment,
+    PhotocatalysisExperiment,
+    MiscExperiment,
+    Experiment,
+    PlasmaCreate,
+    PhotocatalysisCreate,
+    MiscCreate,
+    ExperimentCreate,
+    PlasmaUpdate,
+    PhotocatalysisUpdate,
+    MiscUpdate,
+    ExperimentUpdate,
+    ExperimentListParams,
+
     // Query parameter types
     PaginationParams,
     UserListParams,
@@ -108,4 +198,17 @@ export type {
 } from './types';
 
 // Export constants
-export { CHARACTERIZATION_TYPE_LABELS } from './types';
+export {
+    CHARACTERIZATION_TYPE_LABELS,
+    ANALYZER_TYPE_LABELS,
+    EXPERIMENT_TYPE_LABELS,
+} from './types';
+
+// Export type guards
+export {
+    isPlasmaExperiment,
+    isPhotocatalysisExperiment,
+    isMiscExperiment,
+    isFTIRAnalyzer,
+    isOESAnalyzer,
+} from './types';

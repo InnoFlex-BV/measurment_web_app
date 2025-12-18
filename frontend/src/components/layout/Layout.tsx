@@ -1,5 +1,9 @@
 /**
  * Layout - Main application layout with navigation sidebar.
+ *
+ * Phase 1: Users, Chemicals, Methods, Supports, Catalysts
+ * Phase 2: Files, Samples, Characterizations, Observations
+ * Phase 3: Experiments, Waveforms, Reactors, Analyzers, Contaminants, Carriers, Groups
  */
 
 import React from 'react';
@@ -16,6 +20,12 @@ const navLinkStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties 
     fontWeight: isActive ? 600 : 400,
     transition: 'background-color 0.2s',
 });
+
+// const subNavLinkStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties => ({
+//     ...navLinkStyle({ isActive }),
+//     paddingLeft: '1.5rem',
+//     fontSize: '0.8125rem',
+// });
 
 const sectionTitleStyle: React.CSSProperties = {
     fontSize: '0.625rem',
@@ -106,6 +116,30 @@ export const Layout: React.FC = () => {
                     <NavLink to="/experiments" style={navLinkStyle}>
                         Experiments
                     </NavLink>
+                    <NavLink to="/groups" style={navLinkStyle}>
+                        Groups
+                    </NavLink>
+
+                    {/* Equipment Section (Phase 3) */}
+                    <div style={sectionTitleStyle}>Equipment</div>
+                    <NavLink to="/waveforms" style={navLinkStyle}>
+                        Waveforms
+                    </NavLink>
+                    <NavLink to="/reactors" style={navLinkStyle}>
+                        Reactors
+                    </NavLink>
+                    <NavLink to="/analyzers" style={navLinkStyle}>
+                        Analyzers
+                    </NavLink>
+
+                    {/* Reference Data Section (Phase 3) */}
+                    <div style={sectionTitleStyle}>Reference</div>
+                    <NavLink to="/contaminants" style={navLinkStyle}>
+                        Contaminants
+                    </NavLink>
+                    <NavLink to="/carriers" style={navLinkStyle}>
+                        Carriers
+                    </NavLink>
                 </nav>
 
                 {/* Footer */}
@@ -117,7 +151,7 @@ export const Layout: React.FC = () => {
                         color: 'var(--color-text-secondary)',
                     }}
                 >
-                    Phase 2 Preview
+                    Phase 3
                 </div>
             </aside>
 

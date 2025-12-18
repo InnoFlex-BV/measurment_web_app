@@ -1,8 +1,9 @@
 /**
  * App - Main application component with routing configuration.
  *
- * Phase 1 includes: Users (core)
+ * Phase 1 includes: Users, Chemicals, Methods, Supports, Catalysts (core)
  * Phase 2 includes: Files, Samples, Characterizations, Observations
+ * Phase 3 includes: Waveforms, Reactors, Analyzers, Experiments, Contaminants, Carriers, Groups
  */
 
 import React from 'react';
@@ -26,7 +27,7 @@ import {
     FileFormPage,
 } from '@/pages/core';
 
-// Catalyst domain pages (Phase 2)
+// Catalyst domain pages (Phase 1 & 2)
 import {
     SampleListPage,
     SampleDetailPage,
@@ -51,6 +52,35 @@ import {
     CatalystFormPage,
 } from '@/pages/catalysts';
 
+// Experiments domain pages (Phase 3)
+import {
+    WaveformListPage,
+    WaveformDetailPage,
+    WaveformFormPage,
+    ReactorListPage,
+    ReactorDetailPage,
+    ReactorFormPage,
+    AnalyzerListPage,
+    AnalyzerDetailPage,
+    AnalyzerFormPage,
+    ExperimentListPage,
+    ExperimentDetailPage,
+    ExperimentFormPage,
+} from '@/pages/experiments';
+
+// Reference domain pages (Phase 3)
+import {
+    ContaminantListPage,
+    ContaminantDetailPage,
+    ContaminantFormPage,
+    CarrierListPage,
+    CarrierDetailPage,
+    CarrierFormPage,
+    GroupListPage,
+    GroupDetailPage,
+    GroupFormPage,
+} from '@/pages/reference';
+
 // Create a React Query client with sensible defaults
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -61,23 +91,6 @@ const queryClient = new QueryClient({
         },
     },
 });
-
-/**
- * Placeholder page for unimplemented routes
- */
-const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
-    <div className="container">
-        <div className="page-header">
-            <h1 className="page-title">{title}</h1>
-            <p className="page-description">This page is not yet implemented in Phase 2.</p>
-        </div>
-        <div className="card">
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-                This entity will be available in a future phase. Use the sidebar to navigate to implemented pages.
-            </p>
-        </div>
-    </div>
-);
 
 const App: React.FC = () => {
     return (
@@ -108,25 +121,25 @@ const App: React.FC = () => {
                         {/* Catalyst Domain Routes */}
                         {/* ============================================= */}
 
-                        {/* Chemicals (placeholder) */}
+                        {/* Chemicals */}
                         <Route path="chemicals" element={<ChemicalListPage />} />
                         <Route path="chemicals/new" element={<ChemicalFormPage />} />
                         <Route path="chemicals/:id" element={<ChemicalDetailPage />} />
                         <Route path="chemicals/:id/edit" element={<ChemicalFormPage />} />
 
-                        {/* Methods (placeholder) */}
+                        {/* Methods */}
                         <Route path="methods" element={<MethodListPage />} />
                         <Route path="methods/new" element={<MethodFormPage />} />
                         <Route path="methods/:id" element={<MethodDetailPage />} />
                         <Route path="methods/:id/edit" element={<MethodFormPage />} />
 
-                        {/* Supports (placeholder) */}
+                        {/* Supports */}
                         <Route path="supports" element={<SupportListPage />} />
                         <Route path="supports/new" element={<SupportFormPage />} />
                         <Route path="supports/:id" element={<SupportDetailPage />} />
                         <Route path="supports/:id/edit" element={<SupportFormPage />} />
 
-                        {/* Catalysts (placeholder) */}
+                        {/* Catalysts */}
                         <Route path="catalysts" element={<CatalystListPage />} />
                         <Route path="catalysts/new" element={<CatalystFormPage />} />
                         <Route path="catalysts/:id" element={<CatalystDetailPage />} />
@@ -155,9 +168,54 @@ const App: React.FC = () => {
                         <Route path="observations/:id/edit" element={<ObservationFormPage />} />
 
                         {/* ============================================= */}
-                        {/* Experiment Domain Routes (Phase 3 placeholder) */}
+                        {/* Experiments Domain Routes (Phase 3) */}
                         {/* ============================================= */}
-                        <Route path="experiments" element={<PlaceholderPage title="Experiments" />} />
+
+                        {/* Experiments */}
+                        <Route path="experiments" element={<ExperimentListPage />} />
+                        <Route path="experiments/new" element={<ExperimentFormPage />} />
+                        <Route path="experiments/:id" element={<ExperimentDetailPage />} />
+                        <Route path="experiments/:id/edit" element={<ExperimentFormPage />} />
+
+                        {/* Waveforms */}
+                        <Route path="waveforms" element={<WaveformListPage />} />
+                        <Route path="waveforms/new" element={<WaveformFormPage />} />
+                        <Route path="waveforms/:id" element={<WaveformDetailPage />} />
+                        <Route path="waveforms/:id/edit" element={<WaveformFormPage />} />
+
+                        {/* Reactors */}
+                        <Route path="reactors" element={<ReactorListPage />} />
+                        <Route path="reactors/new" element={<ReactorFormPage />} />
+                        <Route path="reactors/:id" element={<ReactorDetailPage />} />
+                        <Route path="reactors/:id/edit" element={<ReactorFormPage />} />
+
+                        {/* Analyzers */}
+                        <Route path="analyzers" element={<AnalyzerListPage />} />
+                        <Route path="analyzers/new" element={<AnalyzerFormPage />} />
+                        <Route path="analyzers/:id" element={<AnalyzerDetailPage />} />
+                        <Route path="analyzers/:id/edit" element={<AnalyzerFormPage />} />
+
+                        {/* ============================================= */}
+                        {/* Reference Domain Routes (Phase 3) */}
+                        {/* ============================================= */}
+
+                        {/* Contaminants */}
+                        <Route path="contaminants" element={<ContaminantListPage />} />
+                        <Route path="contaminants/new" element={<ContaminantFormPage />} />
+                        <Route path="contaminants/:id" element={<ContaminantDetailPage />} />
+                        <Route path="contaminants/:id/edit" element={<ContaminantFormPage />} />
+
+                        {/* Carriers */}
+                        <Route path="carriers" element={<CarrierListPage />} />
+                        <Route path="carriers/new" element={<CarrierFormPage />} />
+                        <Route path="carriers/:id" element={<CarrierDetailPage />} />
+                        <Route path="carriers/:id/edit" element={<CarrierFormPage />} />
+
+                        {/* Groups */}
+                        <Route path="groups" element={<GroupListPage />} />
+                        <Route path="groups/new" element={<GroupFormPage />} />
+                        <Route path="groups/:id" element={<GroupDetailPage />} />
+                        <Route path="groups/:id/edit" element={<GroupFormPage />} />
 
                         {/* Catch-all redirect to home */}
                         <Route path="*" element={<Navigate to="/" replace />} />

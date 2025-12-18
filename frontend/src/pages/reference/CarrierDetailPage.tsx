@@ -1,29 +1,28 @@
 /**
- * ReactorDetailPage - Detail view for a single reactor.
+ * CarrierDetailPage - Detail view for a single carrier gas.
  */
 
 import React from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useReactor, useDeleteReactor } from '@/hooks/useReactors';
-import { Button, Badge } from '@/components/common';
-import { EXPERIMENT_TYPE_LABELS, type ExperimentType } from '@/services/api';
+import { useCarrier, useDeleteCarrier } from '@/hooks/useCarriers.ts';
+import { Button } from '@/components/common';
 import { format } from 'date-fns';
 
-export const ReactorDetailPage: React.FC = () => {
+export const CarrierDetailPage: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const reactorId = id ? parseInt(id) : undefined;
+    const carrierId = id ? parseInt(id) : undefined;
 
-    const { data: reactor, isLoading, error } = useReactor(reactorId, 'experiments');
-    const deleteMutation = useDeleteReactor();
+    const { data: carrier, isLoading, error } = useCarrier(carrierId, 'experiments');
+    const deleteMutation = useDeleteCarrier();
 
     const handleDelete = () => {
-        if (!reactor) return;
+        if (!carrier) return;
 
-        if (window.confirm(`Are you sure you want to delete this reactor?`)) {
-            deleteMutation.mutate({ id: reactor.id }, {
+        if (window.confirm(`Are you sure you want to delete carrier "${carrier.name}"?`)) {
+            deleteMutation.mutate({ id: carrier.id }, {
                 onSuccess: () => {
-                    navigate('/reactors');
+                    navigate('/carriers');
                 },
             });
         }
@@ -33,20 +32,20 @@ export const ReactorDetailPage: React.FC = () => {
         return (
             <div className="container">
                 <div className="loading-container">
-                    <p>Loading reactor...</p>
+                    <p>Loading carrier...</p>
                 </div>
             </div>
         );
     }
 
-    if (error || !reactor) {
+    if (error || !carrier) {
         return (
             <div className="container">
                 <div className="card" style={{ backgroundColor: 'var(--color-danger)', color: 'white' }}>
-                    <p>Reactor not found or error loading data.</p>
-                    <Link to="/reactors">
+                    <p>Carrier not found or error loading data.</p>
+                    <Link to="/carriers">
                         <Button variant="secondary" style={{ marginTop: 'var(--spacing-md)' }}>
-                            Back to Reactors
+                            Back to Carriers
                         </Button>
                     </Link>
                 </div>
@@ -60,25 +59,24 @@ export const ReactorDetailPage: React.FC = () => {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <Link
-                        to="/reactors"
+                        to="/carriers"
                         style={{ color: 'var(--color-text-secondary)', textDecoration: 'none', fontSize: '0.875rem' }}
                     >
-                        ← Back to Reactors
+                        ← Back to Carriers
                     </Link>
                     <h1 className="page-title" style={{ marginTop: 'var(--spacing-sm)' }}>
-                        Reactor #{reactor.id}
+                        {carrier.name}
                     </h1>
-                    <p className="page-description">Reactor vessel for experiments</p>
+                    <p className="page-description">Carrier gas for experiments</p>
                 </div>
                 <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                    <Link to={`/reactors/${reactor.id}/edit`}>
+                    <Link to={`/carriers/${carrier.id}/edit`}>
                         <Button variant="secondary">Edit</Button>
                     </Link>
                     <Button
                         variant="danger"
                         onClick={handleDelete}
-                        disabled={deleteMutation.isPending || reactor.is_in_use}
-                        title={reactor.is_in_use ? 'Cannot delete reactor in use' : ''}
+                        disabled={deleteMutation.isPending}
                     >
                         {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
                     </Button>
@@ -93,28 +91,10 @@ export const ReactorDetailPage: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-md)' }}>
                     <div>
                         <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
-                            Volume
-                        </p>
-                        <p style={{ fontWeight: 500, margin: 0 }}>
-                            {reactor.volume
-                                ? `${parseFloat(reactor.volume).toFixed(4)} mL`
-                                : 'Not specified'}
-                        </p>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
-                            Status
-                        </p>
-                        <Badge variant={reactor.is_in_use ? 'success' : 'neutral'}>
-                            {reactor.is_in_use ? 'In Use' : 'Available'}
-                        </Badge>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
                             Created
                         </p>
                         <p style={{ fontWeight: 500, margin: 0 }}>
-                            {format(new Date(reactor.created_at), "MMMM d, yyyy 'at' h:mm a")}
+                            {format(new Date(carrier.created_at), "MMMM d, yyyy 'at' h:mm a")}
                         </p>
                     </div>
                     <div>
@@ -122,30 +102,20 @@ export const ReactorDetailPage: React.FC = () => {
                             Last Updated
                         </p>
                         <p style={{ fontWeight: 500, margin: 0 }}>
-                            {format(new Date(reactor.updated_at), "MMMM d, yyyy 'at' h:mm a")}
+                            {format(new Date(carrier.updated_at), "MMMM d, yyyy 'at' h:mm a")}
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* Description */}
-            {reactor.description && (
-                <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                        Description
-                    </h2>
-                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{reactor.description}</p>
-                </div>
-            )}
-
             {/* Linked Experiments */}
             <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
                 <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                    Experiments Using This Reactor ({reactor.experiments?.length || 0})
+                    Experiments Using This Carrier ({carrier.experiments?.length || 0})
                 </h2>
-                {reactor.experiments && reactor.experiments.length > 0 ? (
+                {carrier.experiments && carrier.experiments.length > 0 ? (
                     <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
-                        {reactor.experiments.map((experiment) => (
+                        {carrier.experiments.map((experiment) => (
                             <Link
                                 key={experiment.id}
                                 to={`/experiments/${experiment.id}`}
@@ -160,13 +130,13 @@ export const ReactorDetailPage: React.FC = () => {
                                     color: 'inherit',
                                 }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                <div>
                                     <span style={{ fontWeight: 500, color: 'var(--color-primary)' }}>
                                         {experiment.name}
                                     </span>
-                                    <Badge variant="info">
-                                        {EXPERIMENT_TYPE_LABELS[experiment.experiment_type as ExperimentType]}
-                                    </Badge>
+                                    <span style={{ marginLeft: 'var(--spacing-sm)', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                        ({experiment.experiment_type})
+                                    </span>
                                 </div>
                                 <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
                                     {experiment.purpose}
@@ -176,7 +146,7 @@ export const ReactorDetailPage: React.FC = () => {
                     </div>
                 ) : (
                     <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-                        This reactor is not used in any experiments yet.
+                        This carrier is not used in any experiments yet.
                     </p>
                 )}
             </div>

@@ -1,70 +1,70 @@
 /**
- * WaveformDetailPage - Detail view for a single waveform configuration.
+ * GroupDetailPage - Detail view for a single experiment group.
+ *
+ * Shows group details and all experiments belonging to this group.
  */
 
 import React from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useWaveform, useDeleteWaveform } from '@/hooks/useWaveforms';
+import { useGroup, useDeleteGroup } from '@/hooks/useGroups.ts';
 import { Button, Badge } from '@/components/common';
 import { EXPERIMENT_TYPE_LABELS, type ExperimentType } from '@/services/api';
 import { format } from 'date-fns';
 
-export const WaveformDetailPage: React.FC = () => {
+/**
+ * Get badge color based on experiment type
+ */
+function getExperimentTypeBadgeVariant(type: ExperimentType): 'info' | 'success' | 'warning' {
+    switch (type) {
+        case 'plasma':
+            return 'info';
+        case 'photocatalysis':
+            return 'success';
+        case 'misc':
+            return 'warning';
+        default:
+            return 'info';
+    }
+}
+
+export const GroupDetailPage: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const waveformId = id ? parseInt(id) : undefined;
+    const groupId = id ? parseInt(id) : undefined;
 
-    const { data: waveform, isLoading, error } = useWaveform(waveformId, 'experiments');
-    const deleteMutation = useDeleteWaveform();
+    const { data: group, isLoading, error } = useGroup(groupId, 'experiments,discussed_in_file');
+    const deleteMutation = useDeleteGroup();
 
     const handleDelete = () => {
-        if (!waveform) return;
+        if (!group) return;
 
-        if (window.confirm(`Are you sure you want to delete waveform "${waveform.name}"?`)) {
-            deleteMutation.mutate({ id: waveform.id }, {
+        if (window.confirm(`Are you sure you want to delete group "${group.name}"? This will not delete the experiments in it.`)) {
+            deleteMutation.mutate(group.id, {
                 onSuccess: () => {
-                    navigate('/waveforms');
+                    navigate('/groups');
                 },
             });
         }
-    };
-
-    /**
-     * Format frequency for display
-     */
-    const formatFrequency = (freq?: string): string => {
-        if (!freq) return 'Not set';
-        const val = parseFloat(freq);
-        if (val >= 1000) return `${(val / 1000).toFixed(2)} kHz`;
-        return `${val.toFixed(2)} Hz`;
-    };
-
-    /**
-     * Format duty cycle for display
-     */
-    const formatDutyCycle = (dc?: string): string => {
-        if (!dc) return 'Not set';
-        return `${parseFloat(dc).toFixed(2)}%`;
     };
 
     if (isLoading) {
         return (
             <div className="container">
                 <div className="loading-container">
-                    <p>Loading waveform...</p>
+                    <p>Loading group...</p>
                 </div>
             </div>
         );
     }
 
-    if (error || !waveform) {
+    if (error || !group) {
         return (
             <div className="container">
                 <div className="card" style={{ backgroundColor: 'var(--color-danger)', color: 'white' }}>
-                    <p>Waveform not found or error loading data.</p>
-                    <Link to="/waveforms">
+                    <p>Group not found or error loading data.</p>
+                    <Link to="/groups">
                         <Button variant="secondary" style={{ marginTop: 'var(--spacing-md)' }}>
-                            Back to Waveforms
+                            Back to Groups
                         </Button>
                     </Link>
                 </div>
@@ -78,18 +78,20 @@ export const WaveformDetailPage: React.FC = () => {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <Link
-                        to="/waveforms"
+                        to="/groups"
                         style={{ color: 'var(--color-text-secondary)', textDecoration: 'none', fontSize: '0.875rem' }}
                     >
-                        ← Back to Waveforms
+                        ← Back to Groups
                     </Link>
                     <h1 className="page-title" style={{ marginTop: 'var(--spacing-sm)' }}>
-                        {waveform.name}
+                        {group.name}
                     </h1>
-                    <p className="page-description">Electrical signal configuration for plasma experiments</p>
+                    {group.purpose && (
+                        <p className="page-description">{group.purpose}</p>
+                    )}
                 </div>
                 <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                    <Link to={`/waveforms/${waveform.id}/edit`}>
+                    <Link to={`/groups/${group.id}/edit`}>
                         <Button variant="secondary">Edit</Button>
                     </Link>
                     <Button
@@ -102,60 +104,10 @@ export const WaveformDetailPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* AC Parameters */}
+            {/* Basic Info */}
             <div className="card">
                 <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                    AC Parameters
-                </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-md)' }}>
-                    <div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
-                            AC Frequency
-                        </p>
-                        <p style={{ fontWeight: 500, margin: 0 }}>
-                            {formatFrequency(waveform.ac_frequency)}
-                        </p>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
-                            AC Duty Cycle
-                        </p>
-                        <p style={{ fontWeight: 500, margin: 0 }}>
-                            {formatDutyCycle(waveform.ac_duty_cycle)}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Pulsing Parameters */}
-            <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                    Pulsing Parameters
-                </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-md)' }}>
-                    <div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
-                            Pulsing Frequency
-                        </p>
-                        <p style={{ fontWeight: 500, margin: 0 }}>
-                            {formatFrequency(waveform.pulsing_frequency)}
-                        </p>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
-                            Pulsing Duty Cycle
-                        </p>
-                        <p style={{ fontWeight: 500, margin: 0 }}>
-                            {formatDutyCycle(waveform.pulsing_duty_cycle)}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Timestamps */}
-            <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                    Metadata
+                    Details
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-md)' }}>
                     <div>
@@ -163,7 +115,7 @@ export const WaveformDetailPage: React.FC = () => {
                             Created
                         </p>
                         <p style={{ fontWeight: 500, margin: 0 }}>
-                            {format(new Date(waveform.created_at), "MMMM d, yyyy 'at' h:mm a")}
+                            {format(new Date(group.created_at), "MMMM d, yyyy 'at' h:mm a")}
                         </p>
                     </div>
                     <div>
@@ -171,20 +123,66 @@ export const WaveformDetailPage: React.FC = () => {
                             Last Updated
                         </p>
                         <p style={{ fontWeight: 500, margin: 0 }}>
-                            {format(new Date(waveform.updated_at), "MMMM d, yyyy 'at' h:mm a")}
+                            {format(new Date(group.updated_at), "MMMM d, yyyy 'at' h:mm a")}
                         </p>
                     </div>
+                    <div>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                            Experiments
+                        </p>
+                        <p style={{ fontWeight: 500, margin: 0 }}>
+                            {group.experiment_count || group.experiments?.length || 0}
+                        </p>
+                    </div>
+                    {group.discussed_in_file && (
+                        <div>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                                Discussion File
+                            </p>
+                            <Link
+                                to={`/files/${group.discussed_in_file.id}`}
+                                style={{ fontWeight: 500, color: 'var(--color-primary)' }}
+                            >
+                                {group.discussed_in_file.filename}
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Linked Experiments */}
+            {/* Method */}
+            {group.method && (
+                <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                        Method
+                    </h2>
+                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{group.method}</p>
+                </div>
+            )}
+
+            {/* Conclusion */}
+            {group.conclusion && (
+                <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                        Conclusion
+                    </h2>
+                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{group.conclusion}</p>
+                </div>
+            )}
+
+            {/* Experiments in Group */}
             <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                    Experiments Using This Waveform ({waveform.experiments?.length || 0})
-                </h2>
-                {waveform.experiments && waveform.experiments.length > 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
+                        Experiments ({group.experiments?.length || 0})
+                    </h2>
+                    <Link to="/experiments/new">
+                        <Button variant="secondary" size="sm">Add Experiment</Button>
+                    </Link>
+                </div>
+                {group.experiments && group.experiments.length > 0 ? (
                     <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
-                        {waveform.experiments.map((experiment) => (
+                        {group.experiments.map((experiment) => (
                             <Link
                                 key={experiment.id}
                                 to={`/experiments/${experiment.id}`}
@@ -203,8 +201,8 @@ export const WaveformDetailPage: React.FC = () => {
                                     <span style={{ fontWeight: 500, color: 'var(--color-primary)' }}>
                                         {experiment.name}
                                     </span>
-                                    <Badge variant="info">
-                                        {EXPERIMENT_TYPE_LABELS[experiment.experiment_type as ExperimentType]}
+                                    <Badge variant={getExperimentTypeBadgeVariant(experiment.experiment_type)}>
+                                        {EXPERIMENT_TYPE_LABELS[experiment.experiment_type]}
                                     </Badge>
                                 </div>
                                 <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
@@ -215,7 +213,7 @@ export const WaveformDetailPage: React.FC = () => {
                     </div>
                 ) : (
                     <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-                        This waveform is not used in any experiments yet.
+                        No experiments in this group yet. Add experiments to compare and analyze together.
                     </p>
                 )}
             </div>
