@@ -2,9 +2,10 @@
  * ProcessedFormPage - Form for creating and editing processed results.
  *
  * Handles DRE and EY metric input with validation.
+ * Supports linking experiments during creation or editing.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
@@ -12,12 +13,24 @@ import {
     useCreateProcessed,
     useUpdateProcessed,
 } from '@/hooks/useProcessed';
-import { FormField, TextInput, Button } from '@/components/common';
-import type { ProcessedCreate } from '@/services/api';
+import { useExperiments } from '@/hooks/useExperiments';
+import { FormField, TextInput, Button, Badge } from '@/components/common';
+import { EXPERIMENT_TYPE_LABELS, type ExperimentType, type ProcessedCreate } from '@/services/api';
 
 interface ProcessedFormData {
     dre: string;
     ey: string;
+}
+
+/**
+ * Get badge variant based on experiment type
+ */
+function getExperimentTypeBadgeVariant(type: ExperimentType): 'info' | 'success' | 'warning' {
+    switch (type) {
+        case 'plasma': return 'info';
+        case 'photocatalysis': return 'success';
+        case 'misc': return 'warning';
+    }
 }
 
 export const ProcessedFormPage: React.FC = () => {
@@ -25,10 +38,18 @@ export const ProcessedFormPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const isEditing = !!id;
 
-    // Fetch existing result if editing
+    // State for selected experiments
+    const [selectedExperimentIds, setSelectedExperimentIds] = useState<number[]>([]);
+    const [experimentSearch, setExperimentSearch] = useState('');
+
+    // Fetch existing result if editing (with experiments)
     const { data: result, isLoading: isLoadingResult } = useProcessedResult(
-        id ? parseInt(id) : undefined
+        id ? parseInt(id) : undefined,
+        'experiments'
     );
+
+    // Fetch all experiments for selection
+    const { data: experiments, isLoading: isLoadingExperiments } = useExperiments({});
 
     // Mutations
     const createMutation = useCreateProcessed();
@@ -59,21 +80,66 @@ export const ProcessedFormPage: React.FC = () => {
                 dre: result.dre || '',
                 ey: result.ey || '',
             });
+            // Set selected experiments from existing linked experiments
+            if (result.experiments) {
+                setSelectedExperimentIds(result.experiments.map(e => e.id));
+            }
         }
     }, [result, reset]);
 
+    // Filter experiments based on search
+    const filteredExperiments = useMemo(() => {
+        if (!experiments) return [];
+        if (!experimentSearch) return experiments;
+
+        const search = experimentSearch.toLowerCase();
+        return experiments.filter(exp =>
+            exp.name.toLowerCase().includes(search) ||
+            exp.purpose.toLowerCase().includes(search) ||
+            exp.experiment_type.toLowerCase().includes(search)
+        );
+    }, [experiments, experimentSearch]);
+
+    // Toggle experiment selection
+    const handleExperimentToggle = (expId: number) => {
+        setSelectedExperimentIds(prev =>
+            prev.includes(expId)
+                ? prev.filter(id => id !== expId)
+                : [...prev, expId]
+        );
+    };
+
+    // Select/deselect all filtered experiments
+    const handleSelectAll = () => {
+        const filteredIds = filteredExperiments.map(e => e.id);
+        const allSelected = filteredIds.every(id => selectedExperimentIds.includes(id));
+
+        if (allSelected) {
+            // Deselect all filtered
+            setSelectedExperimentIds(prev => prev.filter(id => !filteredIds.includes(id)));
+        } else {
+            // Select all filtered
+            setSelectedExperimentIds(prev => [...new Set([...prev, ...filteredIds])]);
+        }
+    };
+
     const onSubmit = async (data: ProcessedFormData) => {
         try {
-            // Build create/update data - convert empty strings to undefined
+            // Build create/update data
             const submitData: ProcessedCreate = {
                 dre: data.dre ? parseFloat(data.dre) : undefined,
                 ey: data.ey ? parseFloat(data.ey) : undefined,
+                experiment_ids: selectedExperimentIds.length > 0 ? selectedExperimentIds : undefined,
             };
 
             if (isEditing && id) {
+                // For update, always include experiment_ids to handle unlinking
                 await updateMutation.mutateAsync({
                     id: parseInt(id),
-                    data: submitData,
+                    data: {
+                        ...submitData,
+                        experiment_ids: selectedExperimentIds, // Include even if empty to unlink all
+                    },
                 });
                 navigate(`/processed/${id}`);
             } else {
@@ -127,7 +193,7 @@ export const ProcessedFormPage: React.FC = () => {
                 </h1>
                 <p className="page-description">
                     {isEditing
-                        ? 'Update calculated performance metrics'
+                        ? 'Update calculated performance metrics and linked experiments'
                         : 'Record DRE and Energy Yield from experiment data'}
                 </p>
             </div>
@@ -135,6 +201,7 @@ export const ProcessedFormPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--spacing-lg)' }}>
                 {/* Form */}
                 <form onSubmit={handleSubmit(onSubmit)}>
+                    {/* Performance Metrics Card */}
                     <div className="card">
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
                             Performance Metrics
@@ -193,27 +260,172 @@ export const ProcessedFormPage: React.FC = () => {
                                 <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>g/kWh</span>
                             </div>
                         </FormField>
+                    </div>
 
-                        {/* Info Box */}
-                        <div
-                            style={{
-                                marginTop: 'var(--spacing-lg)',
-                                padding: 'var(--spacing-md)',
-                                backgroundColor: 'var(--color-bg-secondary)',
-                                borderRadius: 'var(--border-radius)',
-                                fontSize: '0.875rem',
-                            }}
-                        >
-                            <p style={{ margin: '0 0 var(--spacing-sm) 0', fontWeight: 500 }}>
-                                💡 Tips
-                            </p>
-                            <ul style={{ margin: 0, paddingLeft: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
-                                <li>Both fields are optional - you can record partial results</li>
-                                <li>DRE values typically range from 0-100%</li>
-                                <li>Higher EY values indicate more energy-efficient processes</li>
-                                <li>Link experiments to results after creation</li>
-                            </ul>
+                    {/* Linked Experiments Card */}
+                    <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+                            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
+                                Linked Experiments ({selectedExperimentIds.length})
+                            </h2>
+                            {selectedExperimentIds.length > 0 && (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setSelectedExperimentIds([])}
+                                >
+                                    Clear All
+                                </Button>
+                            )}
                         </div>
+
+                        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-md)' }}>
+                            Select experiments to associate with this processed result.
+                            {isEditing && ' Changing selection will update all experiment links.'}
+                        </p>
+
+                        {/* Search and Select All */}
+                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
+                            <TextInput
+                                type="text"
+                                placeholder="Search experiments by name, purpose, or type..."
+                                value={experimentSearch}
+                                onChange={(e) => setExperimentSearch(e.target.value)}
+                                style={{ flex: 1 }}
+                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleSelectAll}
+                                disabled={filteredExperiments.length === 0}
+                            >
+                                {filteredExperiments.every(e => selectedExperimentIds.includes(e.id))
+                                    ? 'Deselect All'
+                                    : 'Select All'}
+                            </Button>
+                        </div>
+
+                        {/* Experiment List */}
+                        {isLoadingExperiments ? (
+                            <p style={{ color: 'var(--color-text-secondary)' }}>Loading experiments...</p>
+                        ) : !experiments || experiments.length === 0 ? (
+                            <p style={{ color: 'var(--color-text-secondary)' }}>No experiments available.</p>
+                        ) : filteredExperiments.length === 0 ? (
+                            <p style={{ color: 'var(--color-text-secondary)' }}>No experiments match your search.</p>
+                        ) : (
+                            <div
+                                style={{
+                                    maxHeight: '300px',
+                                    overflowY: 'auto',
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: 'var(--border-radius)',
+                                }}
+                            >
+                                {filteredExperiments.map((experiment) => {
+                                    const isSelected = selectedExperimentIds.includes(experiment.id);
+                                    return (
+                                        <div
+                                            key={experiment.id}
+                                            onClick={() => handleExperimentToggle(experiment.id)}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-sm)',
+                                                padding: 'var(--spacing-sm) var(--spacing-md)',
+                                                borderBottom: '1px solid var(--color-border)',
+                                                cursor: 'pointer',
+                                                backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                                                transition: 'background-color 0.15s',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isSelected) {
+                                                    e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.backgroundColor = isSelected
+                                                    ? 'rgba(99, 102, 241, 0.1)'
+                                                    : 'transparent';
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => {}} // Handled by parent onClick
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                                                    <span style={{
+                                                        fontWeight: 500,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        {experiment.name}
+                                                    </span>
+                                                    <Badge
+                                                        variant={getExperimentTypeBadgeVariant(experiment.experiment_type as ExperimentType)}
+                                                        size="sm"
+                                                    >
+                                                        {EXPERIMENT_TYPE_LABELS[experiment.experiment_type as ExperimentType]}
+                                                    </Badge>
+                                                </div>
+                                                <p style={{
+                                                    fontSize: '0.75rem',
+                                                    color: 'var(--color-text-secondary)',
+                                                    margin: '0.125rem 0 0 0',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}>
+                                                    {experiment.purpose}
+                                                </p>
+                                            </div>
+                                            {isSelected && (
+                                                <span style={{ color: 'var(--color-primary)', fontSize: '1rem' }}>✓</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Selected Count */}
+                        {selectedExperimentIds.length > 0 && (
+                            <p style={{
+                                marginTop: 'var(--spacing-sm)',
+                                fontSize: '0.875rem',
+                                color: 'var(--color-primary)',
+                                fontWeight: 500,
+                            }}>
+                                {selectedExperimentIds.length} experiment{selectedExperimentIds.length !== 1 ? 's' : ''} selected
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Info Box */}
+                    <div
+                        className="card"
+                        style={{
+                            marginTop: 'var(--spacing-lg)',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                        }}
+                    >
+                        <p style={{ margin: '0 0 var(--spacing-sm) 0', fontWeight: 500 }}>
+                            💡 Tips
+                        </p>
+                        <ul style={{ margin: 0, paddingLeft: 'var(--spacing-md)', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                            <li>Both DRE and EY fields are optional - you can record partial results</li>
+                            <li>DRE values typically range from 0-100%</li>
+                            <li>Higher EY values indicate more energy-efficient processes</li>
+                            <li>Link experiments to track which data produced these results</li>
+                            {isEditing && (
+                                <li>Changing experiment selection will update all links (previous links will be removed)</li>
+                            )}
+                        </ul>
                     </div>
 
                     {/* Submit Buttons */}
@@ -251,14 +463,14 @@ export const ProcessedFormPage: React.FC = () => {
                     )}
                 </form>
 
-                {/* Live Preview */}
+                {/* Live Preview Sidebar */}
                 <div>
                     <div className="card" style={{ position: 'sticky', top: 'var(--spacing-lg)' }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
                             Preview
                         </h3>
 
-                        {hasValues ? (
+                        {hasValues || selectedExperimentIds.length > 0 ? (
                             <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
                                 {/* DRE Preview */}
                                 <div>
@@ -321,6 +533,16 @@ export const ProcessedFormPage: React.FC = () => {
                                     ) : (
                                         <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
                                     )}
+                                </div>
+
+                                {/* Linked Experiments Preview */}
+                                <div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                                        Linked Experiments
+                                    </p>
+                                    <span style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+                                        {selectedExperimentIds.length}
+                                    </span>
                                 </div>
 
                                 {/* Status */}

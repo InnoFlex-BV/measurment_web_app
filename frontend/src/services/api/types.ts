@@ -556,11 +556,21 @@ export interface ProcessedSimple {
 export interface ProcessedCreate {
     dre?: number | string;
     ey?: number | string;
+    /** IDs of experiments to link. Each experiment's processed_table_id will be updated. */
+    experiment_ids?: number[];
 }
 
 export interface ProcessedUpdate {
     dre?: number | string | null;
     ey?: number | string | null;
+    /**
+     * IDs of experiments to link. When provided:
+     * - All currently linked experiments are unlinked first
+     * - The specified experiments are then linked
+     * - Use [] to unlink all experiments
+     * - Omit to leave links unchanged
+     */
+    experiment_ids?: number[];
 }
 
 export interface ProcessedListParams {
