@@ -15,6 +15,7 @@ export { TextArea } from './TextArea';
 export { Select } from './Select';
 export { Button } from './Button';
 export { Badge } from './Badge';
+export { RelationshipManager } from './RelationshipManager';
 
 // Type exports
 export type { FormFieldProps } from './FormField';
@@ -23,3 +24,4 @@ export type { TextAreaProps } from './TextArea';
 export type { SelectProps } from './Select';
 export type { ButtonProps } from './Button';
 export type { BadgeProps, BadgeVariant } from './Badge';
+export type { RelationshipManagerProps, LinkableItem } from './RelationshipManager';

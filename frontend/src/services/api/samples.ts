@@ -3,7 +3,7 @@
  *
  * Samples represent prepared portions of catalysts for testing. They track
  * inventory similar to catalysts and can link to characterizations, observations,
- * and experiments.
+ * experiments, and users.
  */
 
 import apiClient from './client';
@@ -27,7 +27,7 @@ export const list = async (params?: SampleListParams): Promise<Sample[]> => {
 /**
  * Fetch a single sample by ID with optional relationship inclusion.
  *
- * Include options: catalyst, support, method, created_by, characterizations, observations
+ * Include options: catalyst, support, method, created_by, characterizations, observations, users
  */
 export const get = async (id: number, include?: string): Promise<Sample> => {
     const params = include ? { include } : undefined;
@@ -77,7 +77,7 @@ export const consume = async (
 };
 
 // ============================================================================
-// Relationship Management
+// Relationship Management - Characterizations
 // ============================================================================
 
 /**
@@ -100,6 +100,10 @@ export const removeCharacterization = async (
     await apiClient.delete(`/api/samples/${sampleId}/characterizations/${characterizationId}`);
 };
 
+// ============================================================================
+// Relationship Management - Observations
+// ============================================================================
+
 /**
  * Link an observation to this sample.
  */
@@ -120,6 +124,30 @@ export const removeObservation = async (
     await apiClient.delete(`/api/samples/${sampleId}/observations/${observationId}`);
 };
 
+// ============================================================================
+// Relationship Management - Users
+// ============================================================================
+
+/**
+ * Add a user to this sample (record that they worked on it).
+ */
+export const addUser = async (
+    sampleId: number,
+    userId: number
+): Promise<void> => {
+    await apiClient.post(`/api/samples/${sampleId}/users/${userId}`);
+};
+
+/**
+ * Remove a user from this sample.
+ */
+export const removeUser = async (
+    sampleId: number,
+    userId: number
+): Promise<void> => {
+    await apiClient.delete(`/api/samples/${sampleId}/users/${userId}`);
+};
+
 export default {
     list,
     get,
@@ -127,8 +155,13 @@ export default {
     update,
     remove,
     consume,
+    // Characterization relationships
     addCharacterization,
     removeCharacterization,
+    // Observation relationships
     addObservation,
     removeObservation,
+    // User relationships
+    addUser,
+    removeUser,
 };

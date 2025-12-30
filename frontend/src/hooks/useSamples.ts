@@ -2,8 +2,8 @@
  * Custom hooks for sample operations.
  *
  * Samples are prepared portions of catalysts for testing. These hooks provide
- * CRUD operations plus inventory management (consume) and relationship
- * management (link/unlink characterizations and observations).
+ * CRUD operations, inventory management (consume), and relationship management
+ * for linking to characterizations, observations, and users.
  */
 
 import {
@@ -24,13 +24,17 @@ import {
 /**
  * Query key factory for consistent cache key management.
  */
-const sampleKeys = {
+export const sampleKeys = {
     all: ['samples'] as const,
     lists: () => [...sampleKeys.all, 'list'] as const,
     list: (params?: SampleListParams) => [...sampleKeys.lists(), params] as const,
     details: () => [...sampleKeys.all, 'detail'] as const,
     detail: (id: number) => [...sampleKeys.details(), id] as const,
 };
+
+// ============================================================================
+// Basic CRUD Hooks
+// ============================================================================
 
 /**
  * Hook to fetch a list of samples with optional filtering.
@@ -127,7 +131,7 @@ export function useConsumeSample(): UseMutationResult<
 }
 
 // ============================================================================
-// Relationship Management Hooks
+// Characterization Relationship Hooks
 // ============================================================================
 
 /**
@@ -170,6 +174,10 @@ export function useRemoveCharacterizationFromSample(): UseMutationResult<
     });
 }
 
+// ============================================================================
+// Observation Relationship Hooks
+// ============================================================================
+
 /**
  * Hook to link an observation to a sample.
  */
@@ -206,6 +214,50 @@ export function useRemoveObservationFromSample(): UseMutationResult<
         onSuccess: (_, { sampleId }) => {
             queryClient.invalidateQueries({ queryKey: sampleKeys.detail(sampleId) });
             queryClient.invalidateQueries({ queryKey: ['observations'] });
+        },
+    });
+}
+
+// ============================================================================
+// User Relationship Hooks
+// ============================================================================
+
+/**
+ * Hook to add a user to a sample.
+ */
+export function useAddUserToSample(): UseMutationResult<
+    void,
+    Error,
+    { sampleId: number; userId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ sampleId, userId }) =>
+            sampleApi.addUser(sampleId, userId),
+        onSuccess: (_, { sampleId }) => {
+            queryClient.invalidateQueries({ queryKey: sampleKeys.detail(sampleId) });
+            queryClient.invalidateQueries({ queryKey: sampleKeys.lists() });
+        },
+    });
+}
+
+/**
+ * Hook to remove a user from a sample.
+ */
+export function useRemoveUserFromSample(): UseMutationResult<
+    void,
+    Error,
+    { sampleId: number; userId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ sampleId, userId }) =>
+            sampleApi.removeUser(sampleId, userId),
+        onSuccess: (_, { sampleId }) => {
+            queryClient.invalidateQueries({ queryKey: sampleKeys.detail(sampleId) });
+            queryClient.invalidateQueries({ queryKey: sampleKeys.lists() });
         },
     });
 }
