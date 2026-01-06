@@ -211,3 +211,145 @@ export function useRemoveObservationFromCatalyst(): UseMutationResult<
         },
     });
 }
+
+// ============================================================================
+// Catalyst Relationship Hooks (from Observation side)
+// ============================================================================
+
+/**
+ * Hook to add a catalyst to an observation.
+ */
+export function useAddCatalystToObservation(): UseMutationResult<
+    void,
+    Error,
+    { observationId: number; catalystId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ observationId, catalystId }) =>
+            observationApi.addCatalyst(observationId, catalystId),
+        onSuccess: (_, { observationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: observationKeys.detail(observationId),
+            });
+            queryClient.invalidateQueries({ queryKey: ['catalysts'] });
+        },
+    });
+}
+
+/**
+ * Hook to remove a catalyst from an observation.
+ */
+export function useRemoveCatalystFromObservation(): UseMutationResult<
+    void,
+    Error,
+    { observationId: number; catalystId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ observationId, catalystId }) =>
+            observationApi.removeCatalyst(observationId, catalystId),
+        onSuccess: (_, { observationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: observationKeys.detail(observationId),
+            });
+            queryClient.invalidateQueries({ queryKey: ['catalysts'] });
+        },
+    });
+}
+
+// ============================================================================
+// Sample Relationship Hooks (from Observation side)
+// ============================================================================
+
+/**
+ * Hook to add a sample to an observation.
+ */
+export function useAddSampleToObservation(): UseMutationResult<
+    void,
+    Error,
+    { observationId: number; sampleId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ observationId, sampleId }) =>
+            observationApi.addSample(observationId, sampleId),
+        onSuccess: (_, { observationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: observationKeys.detail(observationId),
+            });
+            queryClient.invalidateQueries({ queryKey: ['samples'] });
+        },
+    });
+}
+
+/**
+ * Hook to remove a sample from an observation.
+ */
+export function useRemoveSampleFromObservation(): UseMutationResult<
+    void,
+    Error,
+    { observationId: number; sampleId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ observationId, sampleId }) =>
+            observationApi.removeSample(observationId, sampleId),
+        onSuccess: (_, { observationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: observationKeys.detail(observationId),
+            });
+            queryClient.invalidateQueries({ queryKey: ['samples'] });
+        },
+    });
+}
+
+// ============================================================================
+// User Relationship Hooks
+// ============================================================================
+
+/**
+ * Hook to add a user to an observation.
+ */
+export function useAddUserToObservation(): UseMutationResult<
+    void,
+    Error,
+    { observationId: number; userId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ observationId, userId }) =>
+            observationApi.addUser(observationId, userId),
+        onSuccess: (_, { observationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: observationKeys.detail(observationId),
+            });
+        },
+    });
+}
+
+/**
+ * Hook to remove a user from an observation.
+ */
+export function useRemoveUserFromObservation(): UseMutationResult<
+    void,
+    Error,
+    { observationId: number; userId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ observationId, userId }) =>
+            observationApi.removeUser(observationId, userId),
+        onSuccess: (_, { observationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: observationKeys.detail(observationId),
+            });
+        },
+    });
+}

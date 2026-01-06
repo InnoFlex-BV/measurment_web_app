@@ -2,13 +2,12 @@
  * ObservationListPage - List view for all observations.
  *
  * Observations are qualitative research notes that can be linked to catalysts,
- * samples, and files. This page provides filtering by type, observer, and search.
+ * samples, and files. This page provides filtering by calcination data and search.
  */
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useObservations, useDeleteObservation } from '@/hooks/useObservations';
-import { useUsers } from '@/hooks/useUsers';
 import { Button, TextInput, Select, Badge } from '@/components/common';
 import type { Observation } from '@/services/api';
 import { format } from 'date-fns';
@@ -16,32 +15,37 @@ import { format } from 'date-fns';
 export const ObservationListPage: React.FC = () => {
     // Filter state
     const [search, setSearch] = useState('');
-    const [typeFilter, setTypeFilter] = useState('');
-    const [observedBy, setObservedBy] = useState<number | undefined>(undefined);
+    const [hasCalcination, setHasCalcination] = useState<boolean | undefined>(undefined);
 
     // Data fetching
     const { data: observations, isLoading, error } = useObservations({
         search: search || undefined,
-        observation_type: typeFilter || undefined,
-        observed_by: observedBy,
-        include: 'observed_by,catalysts,samples,files',
+        has_calcination: hasCalcination,
+        include: 'users,catalysts,samples,files',
     });
 
-    const { data: users } = useUsers({ is_active: true });
     const deleteMutation = useDeleteObservation();
 
     const handleDelete = (obs: Observation) => {
-        if (window.confirm(`Are you sure you want to delete observation "${obs.title}"?`)) {
+        if (window.confirm(`Are you sure you want to delete observation "${obs.objective}"?`)) {
             deleteMutation.mutate(obs.id);
         }
     };
 
-    // Extract unique observation types from data for filter dropdown
-    const observationTypes = React.useMemo(() => {
-        if (!observations) return [];
-        const types = new Set(observations.map((o) => o.observation_type).filter(Boolean));
-        return Array.from(types) as string[];
-    }, [observations]);
+    // Helper to format conditions for display
+    const formatConditions = (conditions: Record<string, unknown>) => {
+        const parts: string[] = [];
+        if (conditions.temperature) {
+            parts.push(`${conditions.temperature}${conditions.temperature_unit || '°C'}`);
+        }
+        if (conditions.atmosphere) {
+            parts.push(String(conditions.atmosphere));
+        }
+        if (conditions.duration) {
+            parts.push(`${conditions.duration} ${conditions.duration_unit || 'hrs'}`);
+        }
+        return parts.join(' / ') || null;
+    };
 
     return (
         <div className="container">
@@ -49,7 +53,7 @@ export const ObservationListPage: React.FC = () => {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">Observations</h1>
-                    <p className="page-description">Qualitative research notes and findings</p>
+                    <p className="page-description">Qualitative research notes and process documentation</p>
                 </div>
                 <Link to="/observations/new">
                     <Button variant="primary">Add Observation</Button>
@@ -63,37 +67,22 @@ export const ObservationListPage: React.FC = () => {
                         <label className="form-label">Search</label>
                         <TextInput
                             type="text"
-                            placeholder="Search title or content..."
+                            placeholder="Search objective or observations..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label className="form-label">Type</label>
+                        <label className="form-label">Calcination Data</label>
                         <Select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
+                            value={hasCalcination === undefined ? '' : hasCalcination.toString()}
+                            onChange={(e) => setHasCalcination(
+                                e.target.value === '' ? undefined : e.target.value === 'true'
+                            )}
                         >
-                            <option value="">All Types</option>
-                            {observationTypes.map((type) => (
-                                <option key={type} value={type}>
-                                    {type}
-                                </option>
-                            ))}
-                        </Select>
-                    </div>
-                    <div>
-                        <label className="form-label">Observed By</label>
-                        <Select
-                            value={observedBy ?? ''}
-                            onChange={(e) => setObservedBy(e.target.value ? parseInt(e.target.value) : undefined)}
-                        >
-                            <option value="">All Users</option>
-                            {users?.map((user) => (
-                                <option key={user.id} value={user.id}>
-                                    {user.full_name || user.username}
-                                </option>
-                            ))}
+                            <option value="">All</option>
+                            <option value="true">Has Calcination Data</option>
+                            <option value="false">No Calcination Data</option>
                         </Select>
                     </div>
                 </div>
@@ -123,7 +112,7 @@ export const ObservationListPage: React.FC = () => {
                             </p>
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 'var(--spacing-md)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: 'var(--spacing-md)' }}>
                             {observations.map((obs) => (
                                 <div
                                     key={obs.id}
@@ -134,16 +123,28 @@ export const ObservationListPage: React.FC = () => {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-sm)' }}>
                                         <Link
                                             to={`/observations/${obs.id}`}
-                                            style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600, fontSize: '1rem' }}
+                                            style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600, fontSize: '1rem', flex: 1 }}
                                         >
-                                            {obs.title}
+                                            {obs.objective}
                                         </Link>
-                                        {obs.observation_type && (
-                                            <Badge variant="neutral" size="sm">{obs.observation_type}</Badge>
+                                        {obs.has_calcination_data && (
+                                            <Badge variant="warning" size="sm">Calcination</Badge>
                                         )}
                                     </div>
 
-                                    {/* Content Preview */}
+                                    {/* Conditions Preview */}
+                                    {formatConditions(obs.conditions) && (
+                                        <p style={{
+                                            margin: '0 0 var(--spacing-xs)',
+                                            fontSize: '0.75rem',
+                                            color: 'var(--color-text-secondary)',
+                                            fontFamily: 'monospace',
+                                        }}>
+                                            {formatConditions(obs.conditions)}
+                                        </p>
+                                    )}
+
+                                    {/* Observations Preview */}
                                     <p style={{
                                         flex: 1,
                                         margin: 0,
@@ -155,34 +156,49 @@ export const ObservationListPage: React.FC = () => {
                                         WebkitLineClamp: 3,
                                         WebkitBoxOrient: 'vertical',
                                     }}>
-                                        {obs.content}
+                                        {obs.observations_text}
+                                    </p>
+
+                                    {/* Conclusions Preview */}
+                                    <p style={{
+                                        margin: 0,
+                                        marginBottom: 'var(--spacing-sm)',
+                                        fontSize: '0.8rem',
+                                        fontStyle: 'italic',
+                                        color: 'var(--color-text-secondary)',
+                                        overflow: 'hidden',
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                    }}>
+                                        Conclusion: {obs.conclusions}
                                     </p>
 
                                     {/* Meta Info */}
                                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-sm)' }}>
-                                        {obs.observed_by && (
-                                            <span>By {obs.observed_by.full_name || obs.observed_by.username}</span>
+                                        {obs.users && obs.users.length > 0 && (
+                                            <span>
+                                                By {obs.users.map(u => u.full_name || u.username).join(', ')}
+                                            </span>
                                         )}
-                                        {obs.observed_at && (
-                                            <span> • {format(new Date(obs.observed_at), 'MMM d, yyyy')}</span>
-                                        )}
+                                        <span> {format(new Date(obs.created_at), 'MMM d, yyyy')}</span>
                                     </div>
 
                                     {/* Links & Attachments */}
                                     <div style={{ display: 'flex', gap: 'var(--spacing-xs)', flexWrap: 'wrap', marginBottom: 'var(--spacing-sm)' }}>
-                                        {obs.catalysts && obs.catalysts.length > 0 && (
+                                        {(obs.catalyst_count ?? 0) > 0 && (
                                             <Badge variant="info" size="sm">
-                                                {obs.catalysts.length} catalyst{obs.catalysts.length !== 1 ? 's' : ''}
+                                                {obs.catalyst_count} catalyst{obs.catalyst_count !== 1 ? 's' : ''}
                                             </Badge>
                                         )}
-                                        {obs.samples && obs.samples.length > 0 && (
+                                        {(obs.sample_count ?? 0) > 0 && (
                                             <Badge variant="success" size="sm">
-                                                {obs.samples.length} sample{obs.samples.length !== 1 ? 's' : ''}
+                                                {obs.sample_count} sample{obs.sample_count !== 1 ? 's' : ''}
                                             </Badge>
                                         )}
-                                        {obs.files && obs.files.length > 0 && (
-                                            <Badge variant="warning" size="sm">
-                                                {obs.files.length} file{obs.files.length !== 1 ? 's' : ''}
+                                        {(obs.file_count ?? 0) > 0 && (
+                                            <Badge variant="neutral" size="sm">
+                                                {obs.file_count} file{obs.file_count !== 1 ? 's' : ''}
                                             </Badge>
                                         )}
                                     </div>

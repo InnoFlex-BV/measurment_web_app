@@ -386,8 +386,10 @@ export const CatalystDetailPage: React.FC = () => {
                         linkedItems={catalyst.observations || []}
                         availableItems={allObservations || []}
                         isLoadingAvailable={isLoadingObs}
-                        getItemName={(item) => ('objective' in item ? item.objective : (item as any).title) || `Observation #${item.id}`}
-                        getItemSecondary={(item) => ('conclusions' in item && item.conclusions) ? item.conclusions.toString() : ''}
+                        getItemName={(item) =>
+                            ('objective' in item ? item.objective : (item as any).title) || `Observation #${item.id}`}
+                        getItemSecondary={(item) =>
+                            ('conclusions' in item && item.conclusions) ? item.conclusions.toString().substring(0, 100) : ''}
                         itemLinkPrefix="/observations"
                         onAdd={(observationId) =>
                             addObsMutation.mutate({ catalystId: catalyst.id, observationId })

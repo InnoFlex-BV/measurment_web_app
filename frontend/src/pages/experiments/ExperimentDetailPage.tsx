@@ -162,8 +162,7 @@ export const ExperimentDetailPage: React.FC = () => {
                                         to={`/reactors/${experiment.reactor.id}`}
                                         style={{ color: 'var(--color-primary)', fontWeight: 500, textDecoration: 'none' }}
                                     >
-                                        {/* still need to add reactor name to the reactor */}
-                                        {experiment.reactor.id}
+                                        {experiment.reactor.name}
                                     </Link>
                                 ) : (
                                     <span style={{ color: 'var(--color-text-secondary)' }}>—</span>

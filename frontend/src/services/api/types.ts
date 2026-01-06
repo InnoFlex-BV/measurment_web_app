@@ -268,6 +268,7 @@ export interface Sample {
     characterizations?: CharacterizationSimple[];
     observations?: ObservationSimple[];
     experiments?: ExperimentSimple[];
+    users?: UserSimple[];
     experiment_count?: number;
 }
 
@@ -402,43 +403,56 @@ export interface CharacterizationUpdate {
 
 export interface ObservationSimple {
     id: number;
-    title: string;
-    observation_type?: string;
-    observed_at?: string;
+    objective: string;
+    created_at: string;
 }
 
 export interface Observation {
     id: number;
-    title: string;
-    content: string;
-    observed_by_id?: number;
-    observed_at?: string;
-    observation_type?: string;
+    objective: string;
+    conditions: Record<string, unknown>;
+    calcination_parameters: Record<string, unknown>;
+    observations_text: string;
+    data: Record<string, unknown>;
+    conclusions: string;
     created_at: string;
     updated_at: string;
+    // Computed properties
+    has_calcination_data?: boolean;
+    catalyst_count?: number;
+    sample_count?: number;
+    file_count?: number;
     // Optional nested data
-    observed_by?: UserSimple;
-    files?: FileMetadataSimple[];
     catalysts?: CatalystSimple[];
     samples?: SampleSimple[];
+    files?: FileMetadataSimple[];
+    users?: UserSimple[];
 }
 
 export interface ObservationCreate {
-    title: string;
-    content: string;
-    observed_by_id?: number;
-    observed_at?: string;
-    observation_type?: string;
+    objective: string;
+    observations_text: string;
+    conclusions: string;
+    conditions?: Record<string, unknown>;
+    calcination_parameters?: Record<string, unknown>;
+    data?: Record<string, unknown>;
+    catalyst_ids?: number[];
+    sample_ids?: number[];
     file_ids?: number[];
+    user_ids?: number[];
 }
 
 export interface ObservationUpdate {
-    title?: string;
-    content?: string;
-    observed_by_id?: number;
-    observed_at?: string;
-    observation_type?: string;
+    objective?: string;
+    observations_text?: string;
+    conclusions?: string;
+    conditions?: Record<string, unknown>;
+    calcination_parameters?: Record<string, unknown>;
+    data?: Record<string, unknown>;
+    catalyst_ids?: number[];
+    sample_ids?: number[];
     file_ids?: number[];
+    user_ids?: number[];
 }
 
 // ============================================================================
@@ -492,6 +506,7 @@ export interface WaveformListParams {
 
 export interface Reactor {
     id: number;
+    name: string;
     description?: string;
     volume?: string;              // Decimal as string
     created_at: string;
@@ -505,16 +520,19 @@ export interface Reactor {
 
 export interface ReactorSimple {
     id: number;
+    name: string;
     description?: string;
     volume?: string;
 }
 
 export interface ReactorCreate {
+    name: string;
     description?: string;
     volume?: string;
 }
 
 export interface ReactorUpdate {
+    name?: string;
     description?: string;
     volume?: string;
 }
@@ -1119,8 +1137,7 @@ export interface CharacterizationListParams extends PaginationParams {
 
 export interface ObservationListParams extends PaginationParams {
     search?: string;
-    observation_type?: string;
-    observed_by?: number;
+    has_calcination?: boolean;
     include?: string;
 }
 

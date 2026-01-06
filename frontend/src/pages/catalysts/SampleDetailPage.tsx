@@ -329,8 +329,10 @@ export const SampleDetailPage: React.FC = () => {
                         linkedItems={sample.observations || []}
                         availableItems={allObservations || []}
                         isLoadingAvailable={isLoadingObs}
-                        getItemName={(item) => ('objective' in item ? item.objective : (item as any).title) || `Observation #${item.id}`}
-                        getItemSecondary={(item) => ('conclusions' in item && item.conclusions) ? item.conclusions.toString() : ''}
+                        getItemName={(item) =>
+                            ('objective' in item ? item.objective : (item as any).title) || `Observation #${item.id}`}
+                        getItemSecondary={(item) =>
+                            ('conclusions' in item && item.conclusions) ? item.conclusions.toString().substring(0, 100) : ''}
                         itemLinkPrefix="/observations"
                         onAdd={(observationId) =>
                             addObsMutation.mutate({ sampleId: sample.id, observationId })
@@ -361,7 +363,7 @@ export const SampleDetailPage: React.FC = () => {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
                                 <span style={{ color: 'var(--color-text-secondary)' }}>Contributors</span>
-                                <span style={{ fontWeight: 500 }}>{sample.created_by?.full_name?.length || 0}</span>
+                                <span style={{ fontWeight: 500 }}>{sample.users?.length || 0}</span>
                             </div>
                         </div>
                     </div>
@@ -369,7 +371,7 @@ export const SampleDetailPage: React.FC = () => {
                     {/* Users Relationship Manager */}
                     <RelationshipManager<UserSimple | User>
                         title="Contributors"
-                        linkedItems={sample.created_by ? [sample.created_by] : []}
+                        linkedItems={sample.users || []}
                         availableItems={allUsers || []}
                         isLoadingAvailable={isLoadingUsers}
                         getItemName={(item) => item.full_name}

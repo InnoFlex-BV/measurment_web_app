@@ -1,15 +1,41 @@
 /**
  * ObservationDetailPage - Detail view for a single observation.
  *
- * Displays the full observation content along with metadata, linked files,
- * and relationships to catalysts and samples.
+ * Displays the full observation content including conditions, calcination parameters,
+ * collected data, and conclusions. Also shows relationships to catalysts, samples,
+ * files, and users with add/remove management capabilities.
  */
 
 import React from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useObservation, useDeleteObservation } from '@/hooks/useObservations';
-import { Button, Badge } from '@/components/common';
+import {
+    useObservation,
+    useDeleteObservation,
+    useAddFileToObservation,
+    useRemoveFileFromObservation,
+    useAddCatalystToObservation,
+    useRemoveCatalystFromObservation,
+    useAddSampleToObservation,
+    useRemoveSampleFromObservation,
+    useAddUserToObservation,
+    useRemoveUserFromObservation,
+} from '@/hooks/useObservations';
+import { useCatalysts } from '@/hooks/useCatalysts';
+import { useSamples } from '@/hooks/useSamples';
+import { useFiles } from '@/hooks/useFiles';
+import { useUsers } from '@/hooks/useUsers';
+import { Button, Badge, RelationshipManager } from '@/components/common';
 import { format } from 'date-fns';
+import type {
+    CatalystSimple,
+    Catalyst,
+    SampleSimple,
+    Sample,
+    FileMetadataSimple,
+    FileMetadata,
+    UserSimple,
+    User,
+} from '@/services/api';
 
 export const ObservationDetailPage: React.FC = () => {
     const navigate = useNavigate();
@@ -19,18 +45,59 @@ export const ObservationDetailPage: React.FC = () => {
     // Fetch observation with all relationships
     const { data: obs, isLoading, error } = useObservation(
         observationId,
-        'observed_by,files,catalysts,samples'
+        'users,files,catalysts,samples'
     );
 
+    // Fetch available items for relationship management
+    const { data: allCatalysts, isLoading: isLoadingCatalysts } = useCatalysts({});
+    const { data: allSamples, isLoading: isLoadingSamples } = useSamples({});
+    const { data: allFiles, isLoading: isLoadingFiles } = useFiles({});
+    const { data: allUsers, isLoading: isLoadingUsers } = useUsers({ is_active: true });
+
+    // Mutations
     const deleteMutation = useDeleteObservation();
+    const addFileMutation = useAddFileToObservation();
+    const removeFileMutation = useRemoveFileFromObservation();
+    const addCatalystMutation = useAddCatalystToObservation();
+    const removeCatalystMutation = useRemoveCatalystFromObservation();
+    const addSampleMutation = useAddSampleToObservation();
+    const removeSampleMutation = useRemoveSampleFromObservation();
+    const addUserMutation = useAddUserToObservation();
+    const removeUserMutation = useRemoveUserFromObservation();
 
     const handleDelete = () => {
         if (!obs) return;
-        if (window.confirm(`Are you sure you want to delete observation "${obs.title}"?`)) {
+        if (window.confirm(`Are you sure you want to delete observation "${obs.objective}"?`)) {
             deleteMutation.mutate(obs.id, {
                 onSuccess: () => navigate('/observations'),
             });
         }
+    };
+
+    // Helper to render JSONB data as a formatted list
+    const renderJsonData = (data: Record<string, unknown>, title: string) => {
+        const entries = Object.entries(data).filter(([, v]) => v !== null && v !== undefined && v !== '');
+        if (entries.length === 0) return null;
+
+        return (
+            <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                    {title}
+                </h2>
+                <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--spacing-md)' }}>
+                    {entries.map(([key, value]) => (
+                        <div key={key}>
+                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'capitalize', marginBottom: '0.25rem' }}>
+                                {key.replace(/_/g, ' ')}
+                            </dt>
+                            <dd style={{ margin: 0, fontFamily: typeof value === 'number' ? 'monospace' : 'inherit' }}>
+                                {String(value)}
+                            </dd>
+                        </div>
+                    ))}
+                </dl>
+            </div>
+        );
     };
 
     if (isLoading) {
@@ -64,9 +131,9 @@ export const ObservationDetailPage: React.FC = () => {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
-                        <h1 className="page-title" style={{ margin: 0 }}>{obs.title}</h1>
-                        {obs.observation_type && (
-                            <Badge variant="neutral">{obs.observation_type}</Badge>
+                        <h1 className="page-title" style={{ margin: 0 }}>{obs.objective}</h1>
+                        {obs.has_calcination_data && (
+                            <Badge variant="warning">Calcination</Badge>
                         )}
                     </div>
                     <p className="page-description">Observation #{obs.id}</p>
@@ -87,94 +154,75 @@ export const ObservationDetailPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--spacing-lg)' }}>
                 {/* Main Content */}
                 <div>
-                    {/* Observation Content */}
+                    {/* Observations Text */}
                     <div className="card">
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                            Content
+                            Observations
                         </h2>
                         <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                            {obs.content}
+                            {obs.observations_text}
                         </div>
                     </div>
 
-                    {/* Linked Catalysts */}
+                    {/* Conclusions */}
                     <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-                            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
-                                Linked Catalysts ({obs.catalysts?.length || 0})
-                            </h2>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                            Conclusions
+                        </h2>
+                        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontStyle: 'italic' }}>
+                            {obs.conclusions}
                         </div>
-                        {obs.catalysts && obs.catalysts.length > 0 ? (
-                            <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
-                                {obs.catalysts.map((catalyst) => (
-                                    <Link
-                                        key={catalyst.id}
-                                        to={`/catalysts/${catalyst.id}`}
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            padding: 'var(--spacing-sm) var(--spacing-md)',
-                                            backgroundColor: 'var(--color-bg-secondary)',
-                                            borderRadius: 'var(--border-radius)',
-                                            textDecoration: 'none',
-                                            color: 'inherit',
-                                        }}
-                                    >
-                                        <span style={{ fontWeight: 500, color: 'var(--color-primary)' }}>
-                                            {catalyst.name}
-                                        </span>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                                            {catalyst.storage_location}
-                                        </span>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-                                This observation is not linked to any catalysts.
-                            </p>
-                        )}
                     </div>
 
-                    {/* Linked Samples */}
-                    <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-                            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
-                                Linked Samples ({obs.samples?.length || 0})
-                            </h2>
-                        </div>
-                        {obs.samples && obs.samples.length > 0 ? (
-                            <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
-                                {obs.samples.map((sample) => (
-                                    <Link
-                                        key={sample.id}
-                                        to={`/samples/${sample.id}`}
-                                        style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            padding: 'var(--spacing-sm) var(--spacing-md)',
-                                            backgroundColor: 'var(--color-bg-secondary)',
-                                            borderRadius: 'var(--border-radius)',
-                                            textDecoration: 'none',
-                                            color: 'inherit',
-                                        }}
-                                    >
-                                        <span style={{ fontWeight: 500, color: 'var(--color-primary)' }}>
-                                            {sample.name}
-                                        </span>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                                            {sample.storage_location}
-                                        </span>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-                                This observation is not linked to any samples.
-                            </p>
-                        )}
+                    {/* Process Conditions */}
+                    {renderJsonData(obs.conditions, 'Process Conditions')}
+
+                    {/* Calcination Parameters */}
+                    {obs.has_calcination_data && renderJsonData(obs.calcination_parameters, 'Calcination Parameters')}
+
+                    {/* Collected Data */}
+                    {renderJsonData(obs.data, 'Collected Data')}
+
+                    {/* Catalysts Relationship Manager */}
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <RelationshipManager<CatalystSimple | Catalyst>
+                            title="Linked Catalysts"
+                            linkedItems={obs.catalysts || []}
+                            availableItems={allCatalysts || []}
+                            isLoadingAvailable={isLoadingCatalysts}
+                            getItemName={(item) => item.name}
+                            getItemSecondary={(item) => item.storage_location || ''}
+                            itemLinkPrefix="/catalysts"
+                            onAdd={(catalystId) =>
+                                addCatalystMutation.mutate({ observationId: obs.id, catalystId })
+                            }
+                            onRemove={(catalystId) =>
+                                removeCatalystMutation.mutate({ observationId: obs.id, catalystId })
+                            }
+                            isPending={addCatalystMutation.isPending || removeCatalystMutation.isPending}
+                            emptyMessage="This observation is not linked to any catalysts."
+                        />
+                    </div>
+
+                    {/* Samples Relationship Manager */}
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <RelationshipManager<SampleSimple | Sample>
+                            title="Linked Samples"
+                            linkedItems={obs.samples || []}
+                            availableItems={allSamples || []}
+                            isLoadingAvailable={isLoadingSamples}
+                            getItemName={(item) => item.name}
+                            getItemSecondary={(item) => item.storage_location || ''}
+                            itemLinkPrefix="/samples"
+                            onAdd={(sampleId) =>
+                                addSampleMutation.mutate({ observationId: obs.id, sampleId })
+                            }
+                            onRemove={(sampleId) =>
+                                removeSampleMutation.mutate({ observationId: obs.id, sampleId })
+                            }
+                            isPending={addSampleMutation.isPending || removeSampleMutation.isPending}
+                            emptyMessage="This observation is not linked to any samples."
+                        />
                     </div>
                 </div>
 
@@ -188,42 +236,10 @@ export const ObservationDetailPage: React.FC = () => {
                         <dl style={{ margin: 0 }}>
                             <div style={{ marginBottom: 'var(--spacing-sm)' }}>
                                 <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Observed By
-                                </dt>
-                                <dd style={{ margin: 0 }}>
-                                    {obs.observed_by ? (
-                                        <Link to={`/users/${obs.observed_by.id}`} style={{ color: 'var(--color-primary)' }}>
-                                            {obs.observed_by.full_name || obs.observed_by.username}
-                                        </Link>
-                                    ) : (
-                                        <span style={{ color: 'var(--color-text-secondary)' }}>Not recorded</span>
-                                    )}
-                                </dd>
-                            </div>
-                            <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                                <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Date Observed
-                                </dt>
-                                <dd style={{ margin: 0 }}>
-                                    {obs.observed_at
-                                        ? format(new Date(obs.observed_at), 'MMMM d, yyyy')
-                                        : <span style={{ color: 'var(--color-text-secondary)' }}>Not recorded</span>}
-                                </dd>
-                            </div>
-                            {obs.observation_type && (
-                                <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                                    <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        Type
-                                    </dt>
-                                    <dd style={{ margin: 0 }}>{obs.observation_type}</dd>
-                                </div>
-                            )}
-                            <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                                <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                     Created
                                 </dt>
                                 <dd style={{ margin: 0 }}>
-                                    {format(new Date(obs.created_at), 'MMM d, yyyy \'at\' h:mm a')}
+                                    {format(new Date(obs.created_at), 'MMMM d, yyyy \'at\' h:mm a')}
                                 </dd>
                             </div>
                             <div>
@@ -231,44 +247,78 @@ export const ObservationDetailPage: React.FC = () => {
                                     Last Updated
                                 </dt>
                                 <dd style={{ margin: 0 }}>
-                                    {format(new Date(obs.updated_at), 'MMM d, yyyy \'at\' h:mm a')}
+                                    {format(new Date(obs.updated_at), 'MMMM d, yyyy \'at\' h:mm a')}
                                 </dd>
                             </div>
                         </dl>
                     </div>
 
-                    {/* Attached Files */}
+                    {/* Summary Stats */}
                     <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                            Attached Files ({obs.files?.length || 0})
+                            Summary
                         </h2>
-                        {obs.files && obs.files.length > 0 ? (
-                            <div style={{ display: 'grid', gap: 'var(--spacing-xs)' }}>
-                                {obs.files.map((file) => (
-                                    <Link
-                                        key={file.id}
-                                        to={`/files/${file.id}`}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--spacing-xs)',
-                                            padding: 'var(--spacing-xs) var(--spacing-sm)',
-                                            backgroundColor: 'var(--color-bg-secondary)',
-                                            borderRadius: 'var(--border-radius)',
-                                            textDecoration: 'none',
-                                            color: 'var(--color-primary)',
-                                            fontSize: '0.875rem',
-                                        }}
-                                    >
-                                        📄 {file.filename}
-                                    </Link>
-                                ))}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{obs.catalyst_count}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Catalysts</div>
                             </div>
-                        ) : (
-                            <p style={{ color: 'var(--color-text-secondary)', margin: 0, fontSize: '0.875rem' }}>
-                                No files attached to this observation.
-                            </p>
-                        )}
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{obs.sample_count}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Samples</div>
+                            </div>
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{obs.file_count}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Files</div>
+                            </div>
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{obs.users?.length || 0}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Observers</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Users/Observers Relationship Manager */}
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <RelationshipManager<UserSimple | User>
+                            title="Observers"
+                            linkedItems={obs.users || []}
+                            availableItems={allUsers || []}
+                            isLoadingAvailable={isLoadingUsers}
+                            getItemName={(item) => item.full_name || ('username' in item ? item.username : '')}
+                            getItemSecondary={(item) => ('email' in item ? item.email : item.username)}
+                            getItemBadge={(item) => ('is_active' in item && !item.is_active) ? { label: 'Inactive', variant: 'neutral' } : null}
+                            itemLinkPrefix="/users"
+                            onAdd={(userId) =>
+                                addUserMutation.mutate({ observationId: obs.id, userId })
+                            }
+                            onRemove={(userId) =>
+                                removeUserMutation.mutate({ observationId: obs.id, userId })
+                            }
+                            isPending={addUserMutation.isPending || removeUserMutation.isPending}
+                            emptyMessage="No observers recorded for this observation."
+                        />
+                    </div>
+
+                    {/* Files Relationship Manager */}
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <RelationshipManager<FileMetadataSimple | FileMetadata>
+                            title="Attached Files"
+                            linkedItems={obs.files || []}
+                            availableItems={allFiles || []}
+                            isLoadingAvailable={isLoadingFiles}
+                            getItemName={(item) => item.filename}
+                            getItemSecondary={(item) => item.mime_type}
+                            itemLinkPrefix="/files"
+                            onAdd={(fileId) =>
+                                addFileMutation.mutate({ observationId: obs.id, fileId })
+                            }
+                            onRemove={(fileId) =>
+                                removeFileMutation.mutate({ observationId: obs.id, fileId })
+                            }
+                            isPending={addFileMutation.isPending || removeFileMutation.isPending}
+                            emptyMessage="No files attached to this observation."
+                        />
                     </div>
                 </div>
             </div>

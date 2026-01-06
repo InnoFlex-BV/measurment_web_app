@@ -126,6 +126,48 @@ export const removeFromSample = async (
     await apiClient.delete(`/api/samples/${sampleId}/observations/${observationId}`);
 };
 
+/**
+ * Add a user to this observation.
+ */
+export const addUser = async (observationId: number, userId: number): Promise<void> => {
+    await apiClient.post(`/api/observations/${observationId}/users/${userId}`);
+};
+
+/**
+ * Remove a user from this observation.
+ */
+export const removeUser = async (observationId: number, userId: number): Promise<void> => {
+    await apiClient.delete(`/api/observations/${observationId}/users/${userId}`);
+};
+
+/**
+ * Add a catalyst to this observation.
+ */
+export const addCatalyst = async (observationId: number, catalystId: number): Promise<void> => {
+    await apiClient.post(`/api/observations/${observationId}/catalysts/${catalystId}`);
+};
+
+/**
+ * Remove a catalyst from this observation.
+ */
+export const removeCatalyst = async (observationId: number, catalystId: number): Promise<void> => {
+    await apiClient.delete(`/api/observations/${observationId}/catalysts/${catalystId}`);
+};
+
+/**
+ * Add a sample to this observation.
+ */
+export const addSample = async (observationId: number, sampleId: number): Promise<void> => {
+    await apiClient.post(`/api/observations/${observationId}/samples/${sampleId}`);
+};
+
+/**
+ * Remove a sample from this observation.
+ */
+export const removeSample = async (observationId: number, sampleId: number): Promise<void> => {
+    await apiClient.delete(`/api/observations/${observationId}/samples/${sampleId}`);
+};
+
 export default {
     list,
     get,
@@ -138,4 +180,10 @@ export default {
     removeFromCatalyst,
     addToSample,
     removeFromSample,
+    addUser,
+    removeUser,
+    addCatalyst,
+    removeCatalyst,
+    addSample,
+    removeSample,
 };

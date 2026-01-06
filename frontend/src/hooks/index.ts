@@ -27,8 +27,39 @@ export * from './useSamples';
 // ============================================================================
 // Characterization Domain Hooks
 // ============================================================================
-export * from './useCharacterizations';
-export * from './useObservations';
+// Note: useCharacterizations and useObservations have some hooks with the same names
+// as useCatalysts. We explicitly re-export to avoid ambiguity, preferring the
+// hooks from useCharacterizations/useObservations for their respective domains.
+export {
+    useCharacterizations,
+    useCharacterization,
+    useCreateCharacterization,
+    useUpdateCharacterization,
+    useDeleteCharacterization,
+    // These override the ones from useCatalysts - they call characterization API endpoints
+    useAddCharacterizationToCatalyst,
+    useRemoveCharacterizationFromCatalyst,
+} from './useCharacterizations';
+
+export {
+    useObservations,
+    useObservation,
+    useCreateObservation,
+    useUpdateObservation,
+    useDeleteObservation,
+    useAddFileToObservation,
+    useRemoveFileFromObservation,
+    // These override the ones from useCatalysts - they call observation API endpoints
+    useAddObservationToCatalyst,
+    useRemoveObservationFromCatalyst,
+    // New hooks for managing relationships from observation side
+    useAddCatalystToObservation,
+    useRemoveCatalystFromObservation,
+    useAddSampleToObservation,
+    useRemoveSampleFromObservation,
+    useAddUserToObservation,
+    useRemoveUserFromObservation,
+} from './useObservations';
 
 // ============================================================================
 // Experiments Domain Hooks (Phase 3)
