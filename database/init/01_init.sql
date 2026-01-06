@@ -42,6 +42,7 @@ create table files (
 
 create table reactor (
      id serial primary key,
+     name varchar(255) not null,
      description text,
      volume numeric(10,4),
      updated_at timestamp with time zone default current_timestamp not null,

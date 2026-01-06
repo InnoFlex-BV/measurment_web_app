@@ -54,6 +54,9 @@ class Reactor(Base):
     # Primary key
     id = Column(Integer, primary_key=True, autoincrement=True)
 
+    # Reactor name/identifier
+    name = Column(Text, nullable=False)
+
     # Detailed description of the reactor
     # Include: design type, materials, dimensions, configuration details
     # Example: "Quartz DBD reactor, 10mm gap, powered electrode 50mm diameter,

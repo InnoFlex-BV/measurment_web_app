@@ -28,6 +28,7 @@ export const ReactorFormPage: React.FC = () => {
         reset,
     } = useForm<ReactorCreate>({
         defaultValues: {
+            name: '',
             description: '',
             volume: '',
         },
@@ -36,6 +37,7 @@ export const ReactorFormPage: React.FC = () => {
     useEffect(() => {
         if (reactor) {
             reset({
+                name: reactor.name || '',
                 description: reactor.description || '',
                 volume: reactor.volume || '',
             });
@@ -45,6 +47,7 @@ export const ReactorFormPage: React.FC = () => {
     const onSubmit = async (data: ReactorCreate) => {
         // Clean up empty strings to undefined
         const cleanData: ReactorCreate = {
+            name: data.name,
             description: data.description || undefined,
             volume: data.volume || undefined,
         };
@@ -96,6 +99,20 @@ export const ReactorFormPage: React.FC = () => {
 
             <div className="card">
                 <form onSubmit={handleSubmit(onSubmit)}>
+                    <FormField
+                        label="Name"
+                        error={errors.name?.message}
+                        required
+                    >
+                        <TextInput
+                            {...register('name', {
+                                required: 'Name is required',
+                                minLength: { value: 1, message: 'Name is required' },
+                            })}
+                            placeholder="e.g., DBD-1, Photoreactor A"
+                        />
+                    </FormField>
+
                     <FormField
                         label="Description"
                         error={errors.description?.message}

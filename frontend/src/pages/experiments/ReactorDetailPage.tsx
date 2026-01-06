@@ -66,7 +66,7 @@ export const ReactorDetailPage: React.FC = () => {
                         ← Back to Reactors
                     </Link>
                     <h1 className="page-title" style={{ marginTop: 'var(--spacing-sm)' }}>
-                        Reactor #{reactor.id}
+                        {reactor.name}
                     </h1>
                     <p className="page-description">Reactor vessel for experiments</p>
                 </div>
@@ -91,6 +91,14 @@ export const ReactorDetailPage: React.FC = () => {
                     Details
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-md)' }}>
+                    <div>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
+                            Name
+                        </p>
+                        <p style={{ fontWeight: 500, margin: 0 }}>
+                            {reactor.name}
+                        </p>
+                    </div>
                     <div>
                         <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>
                             Volume

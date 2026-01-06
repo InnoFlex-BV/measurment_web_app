@@ -44,7 +44,7 @@ export const ReactorListPage: React.FC = () => {
                 <label className="form-label">Search</label>
                 <TextInput
                     type="text"
-                    placeholder="Search by reactor description..."
+                    placeholder="Search by reactor name or description..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -83,6 +83,7 @@ export const ReactorListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
+                                    <th>Name</th>
                                     <th>Description</th>
                                     <th>Volume</th>
                                     <th>Experiments</th>
@@ -98,12 +99,15 @@ export const ReactorListPage: React.FC = () => {
                                                 to={`/reactors/${reactor.id}`}
                                                 style={{ color: 'var(--color-primary)', fontWeight: 500 }}
                                             >
-                                                {reactor.description
-                                                    ? (reactor.description.length > 50
-                                                        ? reactor.description.substring(0, 50) + '...'
-                                                        : reactor.description)
-                                                    : `Reactor #${reactor.id}`}
+                                                {reactor.name}
                                             </Link>
+                                        </td>
+                                        <td style={{ color: 'var(--color-text-secondary)' }}>
+                                            {reactor.description
+                                                ? (reactor.description.length > 40
+                                                    ? reactor.description.substring(0, 40) + '...'
+                                                    : reactor.description)
+                                                : '-'}
                                         </td>
                                         <td>
                                             {reactor.volume

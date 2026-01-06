@@ -28,6 +28,15 @@ class ReactorBase(BaseModel):
     Base schema for reactors with core attributes.
     """
 
+    # Reactor name/identifier
+    name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Name or identifier for the reactor",
+        examples=["DBD-1", "Photoreactor A", "Fixed-bed Reactor"]
+    )
+
     # Reactor description
     description: Optional[str] = Field(
         None,
@@ -54,10 +63,11 @@ class ReactorCreate(ReactorBase):
 class ReactorUpdate(BaseModel):
     """
     Schema for updating a reactor.
-    
+
     All fields optional for partial updates.
     """
 
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     volume: Optional[Decimal] = Field(None, ge=0)
 
@@ -68,6 +78,7 @@ class ReactorSimple(BaseModel):
     """
 
     id: int = Field(..., description="Unique identifier")
+    name: str = Field(..., description="Reactor name")
     volume: Optional[Decimal] = Field(None, description="Volume")
     description: Optional[str] = Field(None, description="Description preview")
 
