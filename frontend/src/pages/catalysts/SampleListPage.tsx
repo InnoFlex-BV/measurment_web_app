@@ -1,30 +1,23 @@
 /**
- * SampleListPage - List view for all samples with filtering.
- *
- * Samples represent prepared portions of catalysts for testing. This page
- * provides comprehensive filtering by source catalyst, support material,
- * preparation method, and depletion status.
+ * SampleListPage - List view for all samples with filtering and sorting.
  */
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSamples, useDeleteSample } from '@/hooks/useSamples';
+import { useSamples, useDeleteSample, useSortableData } from '@/hooks';
 import { useCatalysts } from '@/hooks/useCatalysts';
 import { useSupports } from '@/hooks/useSupports';
 import { useMethods } from '@/hooks/useMethods';
-import { Button, TextInput, Select, Badge } from '@/components/common';
+import { Button, TextInput, Select, Badge, SortableHeader } from '@/components/common';
 import type { Sample } from '@/services/api';
-import { format } from 'date-fns';
 
 export const SampleListPage: React.FC = () => {
-    // Filter state
     const [search, setSearch] = useState('');
     const [catalystId, setCatalystId] = useState<number | undefined>(undefined);
     const [supportId, setSupportId] = useState<number | undefined>(undefined);
     const [methodId, setMethodId] = useState<number | undefined>(undefined);
     const [depleted, setDepleted] = useState<boolean | undefined>(undefined);
 
-    // Data fetching
     const { data: samples, isLoading, error } = useSamples({
         search: search || undefined,
         catalyst_id: catalystId,
@@ -34,11 +27,10 @@ export const SampleListPage: React.FC = () => {
         include: 'catalyst,support,method,created_by',
     });
 
-    // Filter dropdown data
+    const { sortedData, requestSort, getSortDirection } = useSortableData(samples, { key: 'name', direction: 'asc' });
     const { data: catalysts } = useCatalysts({ depleted: false });
     const { data: supports } = useSupports();
     const { data: methods } = useMethods({ is_active: true });
-
     const deleteMutation = useDeleteSample();
 
     const handleDelete = (sample: Sample) => {
@@ -47,9 +39,6 @@ export const SampleListPage: React.FC = () => {
         }
     };
 
-    /**
-     * Calculate usage percentage for display
-     */
     const getRemainingPercentage = (sample: Sample): number => {
         const yield_amt = parseFloat(sample.yield_amount);
         const remaining = parseFloat(sample.remaining_amount);
@@ -59,7 +48,6 @@ export const SampleListPage: React.FC = () => {
 
     return (
         <div className="container">
-            {/* Page Header */}
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">Samples</h1>
@@ -70,7 +58,6 @@ export const SampleListPage: React.FC = () => {
                 </Link>
             </div>
 
-            {/* Filters */}
             <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--spacing-md)' }}>
                     <div>
@@ -135,24 +122,21 @@ export const SampleListPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Loading State */}
             {isLoading && (
                 <div className="loading-container">
                     <p>Loading samples...</p>
                 </div>
             )}
 
-            {/* Error State */}
             {error && (
                 <div className="card" style={{ backgroundColor: 'var(--color-danger)', color: 'white', padding: 'var(--spacing-md)' }}>
                     <p>Error loading samples. Please try again.</p>
                 </div>
             )}
 
-            {/* Samples Table */}
             {samples && (
                 <>
-                    {samples.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
                             <p style={{ color: 'var(--color-text-secondary)' }}>
                                 No samples found. {search && 'Try adjusting your filters.'}
@@ -164,18 +148,18 @@ export const SampleListPage: React.FC = () => {
                                 <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
                                     <thead>
                                     <tr style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Name</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Source Catalyst</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Support</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Method</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>Inventory</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Status</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Created</th>
+                                        <SortableHeader label="Name" sortKey="name" currentDirection={getSortDirection('name')} onSort={requestSort} />
+                                        <SortableHeader label="Source Catalyst" sortKey="catalyst.name" currentDirection={getSortDirection('catalyst.name')} onSort={requestSort} />
+                                        <SortableHeader label="Support" sortKey="support.descriptive_name" currentDirection={getSortDirection('support.descriptive_name')} onSort={requestSort} />
+                                        <SortableHeader label="Method" sortKey="method.descriptive_name" currentDirection={getSortDirection('method.descriptive_name')} onSort={requestSort} />
+                                        <SortableHeader label="Inventory" sortKey="remaining_amount" currentDirection={getSortDirection('remaining_amount')} onSort={requestSort} align="right" />
+                                        <SortableHeader label="Status" sortKey="is_depleted" currentDirection={getSortDirection('is_depleted')} onSort={requestSort} />
+                                        <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
                                         <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>Actions</th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {samples.map((sample) => (
+                                    {sortedData.map((sample) => (
                                         <tr key={sample.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
                                                 <Link
@@ -201,12 +185,12 @@ export const SampleListPage: React.FC = () => {
                                                 {sample.method?.descriptive_name || <span style={{ color: 'var(--color-text-secondary)' }}>—</span>}
                                             </td>
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right', fontFamily: 'monospace' }}>
-                                                    <span title={`${sample.remaining_amount} / ${sample.yield_amount}`}>
-                                                        {parseFloat(sample.remaining_amount).toFixed(2)} g
-                                                    </span>
+                                                <span title={`${sample.remaining_amount} / ${sample.yield_amount}`}>
+                                                    {parseFloat(sample.remaining_amount).toFixed(2)} g
+                                                </span>
                                                 <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginLeft: '0.5rem' }}>
-                                                        ({getRemainingPercentage(sample)}% left)
-                                                    </span>
+                                                    ({getRemainingPercentage(sample)}% left)
+                                                </span>
                                             </td>
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
                                                 {sample.is_depleted ? (
@@ -215,20 +199,18 @@ export const SampleListPage: React.FC = () => {
                                                     <Badge variant="success" size="sm">Available</Badge>
                                                 )}
                                             </td>
-                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                                {format(new Date(sample.created_at), 'MMM d, yyyy')}
-                                            </td>
-                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', gap: 'var(--spacing-xs)', justifyContent: 'flex-end' }}>
-                                                    <Link to={`/samples/${sample.id}`}>
-                                                        <Button variant="secondary" size="sm">View</Button>
+                                            <td>{new Date(sample.created_at).toLocaleDateString()}</td>
+                                            <td>
+                                                <div className="table-actions">
+                                                    <Link to={`/catalysts/${sample.id}`}>
+                                                        <Button variant="secondary" className="table-action-button">View</Button>
                                                     </Link>
-                                                    <Link to={`/samples/${sample.id}/edit`}>
-                                                        <Button variant="secondary" size="sm">Edit</Button>
+                                                    <Link to={`/catalysts/${sample.id}/edit`}>
+                                                        <Button variant="secondary" className="table-action-button">Edit</Button>
                                                     </Link>
                                                     <Button
                                                         variant="danger"
-                                                        size="sm"
+                                                        className="table-action-button"
                                                         onClick={() => handleDelete(sample)}
                                                         disabled={deleteMutation.isPending}
                                                     >
@@ -245,7 +227,7 @@ export const SampleListPage: React.FC = () => {
                     )}
 
                     <p style={{ marginTop: 'var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                        Showing {samples.length} sample{samples.length !== 1 ? 's' : ''}
+                        Showing {sortedData.length} sample{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

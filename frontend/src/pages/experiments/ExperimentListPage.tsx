@@ -11,7 +11,8 @@ import { Link } from 'react-router-dom';
 import { useExperiments, useDeleteExperiment } from '@/hooks/useExperiments';
 import { useReactors } from '@/hooks/useReactors';
 import { useGroups } from '@/hooks/useGroups';
-import { Button, TextInput, Select, Badge } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, Select, Badge, SortableHeader } from '@/components/common';
 import {
     type Experiment,
     type ExperimentType,
@@ -43,6 +44,7 @@ export const ExperimentListPage: React.FC = () => {
     const { data: reactors } = useReactors();
     const { data: groups } = useGroups();
 
+    const { sortedData, requestSort, getSortDirection } = useSortableData(experiments, { key: 'name', direction: 'asc' });
     const deleteMutation = useDeleteExperiment();
 
     const handleDelete = (experiment: Experiment) => {
@@ -182,7 +184,7 @@ export const ExperimentListPage: React.FC = () => {
 
             {experiments && (
                 <>
-                    {experiments.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No experiments found</h3>
                             <p className="empty-state-description">
@@ -201,17 +203,17 @@ export const ExperimentListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Type</th>
-                                    <th>Purpose</th>
-                                    <th>Parameters</th>
-                                    <th>Samples</th>
-                                    <th>Status</th>
-                                    <th style={{ width: '150px' }}>Actions</th>
+                                    <SortableHeader label="Name" sortKey="name" currentDirection={getSortDirection('name')} onSort={requestSort} />
+                                    <SortableHeader label="Type" sortKey="experiment_type" currentDirection={getSortDirection('experiment_type')} onSort={requestSort} />
+                                    <SortableHeader label="Purpose" sortKey="purpose" currentDirection={getSortDirection('purpose')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>Parameters</th>
+                                    <SortableHeader label="Samples" sortKey="sample_count" currentDirection={getSortDirection('sample_count')} onSort={requestSort} />
+                                    <SortableHeader label="Status" sortKey="has_conclusion" currentDirection={getSortDirection('has_conclusion')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', width: '150px' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {experiments.map((experiment) => (
+                                {sortedData.map((experiment) => (
                                     <tr key={experiment.id}>
                                         <td>
                                             <Link
@@ -276,7 +278,7 @@ export const ExperimentListPage: React.FC = () => {
                         </div>
                     )}
                     <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
-                        {experiments.length} experiment{experiments.length !== 1 ? 's' : ''}
+                        {sortedData.length} experiment{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

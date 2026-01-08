@@ -13,7 +13,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMethods, useDeleteMethod } from '@/hooks/useMethods';
-import { Button, TextInput } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, Select, SortableHeader } from '@/components/common';
 import type { Method } from '@/services/api';
 
 export const MethodListPage: React.FC = () => {
@@ -21,6 +22,7 @@ export const MethodListPage: React.FC = () => {
     const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
 
     const { data: methods, isLoading, error } = useMethods({ search, is_active: isActive });
+    const { sortedData, requestSort, getSortDirection } = useSortableData(methods, { key: 'descriptive_name', direction: 'asc' });
     const deleteMutation = useDeleteMethod();
 
     const handleDelete = (method: Method) => {
@@ -54,15 +56,14 @@ export const MethodListPage: React.FC = () => {
                     </div>
                     <div>
                         <label className="form-label">Status</label>
-                        <select
-                            className="select"
+                        <Select
                             value={isActive === undefined ? '' : String(isActive)}
                             onChange={(e) => setIsActive(e.target.value === '' ? undefined : e.target.value === 'true')}
                         >
                             <option value="">All Methods</option>
                             <option value="true">Active</option>
                             <option value="false">Inactive</option>
-                        </select>
+                        </Select>
                     </div>
                 </div>
             </div>
@@ -81,7 +82,7 @@ export const MethodListPage: React.FC = () => {
 
             {methods && (
                 <>
-                    {methods.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No methods found</h3>
                             <p className="empty-state-description">
@@ -98,15 +99,15 @@ export const MethodListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Method Name</th>
-                                    <th>Procedure Summary</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <SortableHeader label="Method Name" sortKey="descriptive_name" currentDirection={getSortDirection('descriptive_name')} onSort={requestSort} />
+                                    <SortableHeader label="Procedure Summary" sortKey="procedure" currentDirection={getSortDirection('procedure')} onSort={requestSort} />
+                                    <SortableHeader label="Status" sortKey="is_active" currentDirection={getSortDirection('is_active')} onSort={requestSort} />
+                                    <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {methods.map((method) => (
+                                {sortedData.map((method) => (
                                     <tr key={method.id}>
                                         <td>{method.descriptive_name}</td>
                                         <td style={{ maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

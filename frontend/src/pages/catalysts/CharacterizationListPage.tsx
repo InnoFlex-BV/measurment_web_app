@@ -1,15 +1,11 @@
 /**
- * CharacterizationListPage - List view for all characterizations.
- *
- * Displays characterization records with filtering by type and search.
- * Each characterization type (XRD, BET, TEM, etc.) represents
- * a different analytical measurement technique.
+ * CharacterizationListPage - List view for all characterizations with sorting.
  */
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useCharacterizations, useDeleteCharacterization } from '@/hooks/useCharacterizations';
-import { Button, TextInput, Select, Badge } from '@/components/common';
+import { useCharacterizations, useDeleteCharacterization, useSortableData } from '@/hooks';
+import { Button, TextInput, Select, Badge, SortableHeader } from '@/components/common';
 import {
     type Characterization,
     type CharacterizationType,
@@ -17,39 +13,29 @@ import {
 } from '@/services/api';
 import { format } from 'date-fns';
 
-/**
- * All available characterization types for the filter dropdown
- */
 const CHARACTERIZATION_TYPES: CharacterizationType[] = [
     'XRD', 'BET', 'TEM', 'SEM', 'FTIR', 'XPS', 'TPR', 'TGA',
     'UV_VIS', 'RAMAN', 'ICP_OES', 'CHNS', 'NMR', 'GC', 'HPLC', 'MS', 'OTHER',
 ];
 
-/**
- * Get badge color based on characterization type category
- */
 function getTypeBadgeVariant(type: string): 'info' | 'success' | 'warning' | 'neutral' {
-    // Imaging techniques
     if (['TEM', 'SEM'].includes(type)) return 'info';
-    // Surface analysis
     if (['BET', 'XPS', 'TPR'].includes(type)) return 'success';
-    // Spectroscopy
     if (['XRD', 'FTIR', 'UV_VIS', 'RAMAN', 'NMR'].includes(type)) return 'warning';
     return 'neutral';
 }
 
 export const CharacterizationListPage: React.FC = () => {
-    // Filter state
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState<CharacterizationType | ''>('');
 
-    // Data fetching
     const { data: characterizations, isLoading, error } = useCharacterizations({
         search: search || undefined,
         type_name: typeFilter || undefined,
         include: 'users,catalysts,samples',
     });
 
+    const { sortedData, requestSort, getSortDirection } = useSortableData(characterizations, { key: 'created_at', direction: 'desc' });
     const deleteMutation = useDeleteCharacterization();
 
     const handleDelete = (char: Characterization) => {
@@ -61,7 +47,6 @@ export const CharacterizationListPage: React.FC = () => {
 
     return (
         <div className="container">
-            {/* Page Header */}
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">Characterizations</h1>
@@ -72,7 +57,6 @@ export const CharacterizationListPage: React.FC = () => {
                 </Link>
             </div>
 
-            {/* Filters */}
             <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-md)' }}>
                     <div>
@@ -101,24 +85,21 @@ export const CharacterizationListPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Loading State */}
             {isLoading && (
                 <div className="loading-container">
                     <p>Loading characterizations...</p>
                 </div>
             )}
 
-            {/* Error State */}
             {error && (
                 <div className="card" style={{ backgroundColor: 'var(--color-danger)', color: 'white', padding: 'var(--spacing-md)' }}>
                     <p>Error loading characterizations. Please try again.</p>
                 </div>
             )}
 
-            {/* Characterizations Table */}
             {characterizations && (
                 <>
-                    {characterizations.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
                             <p style={{ color: 'var(--color-text-secondary)' }}>
                                 No characterizations found. {search && 'Try adjusting your filters.'}
@@ -130,22 +111,19 @@ export const CharacterizationListPage: React.FC = () => {
                                 <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                                     <thead>
                                     <tr style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Type</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Description</th>
+                                        <SortableHeader label="Type" sortKey="type_name" currentDirection={getSortDirection('type_name')} onSort={requestSort} />
+                                        <SortableHeader label="Description" sortKey="description" currentDirection={getSortDirection('description')} onSort={requestSort} />
                                         <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Researchers</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Created</th>
+                                        <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
                                         <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Links</th>
                                         <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>Actions</th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {characterizations.map((char) => (
+                                    {sortedData.map((char) => (
                                         <tr key={char.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
-                                                <Link
-                                                    to={`/characterizations/${char.id}`}
-                                                    style={{ textDecoration: 'none' }}
-                                                >
+                                                <Link to={`/characterizations/${char.id}`} style={{ textDecoration: 'none' }}>
                                                     <Badge variant={getTypeBadgeVariant(char.type_name)} size="sm">
                                                         {char.type_name}
                                                     </Badge>
@@ -245,7 +223,7 @@ export const CharacterizationListPage: React.FC = () => {
                     )}
 
                     <p style={{ marginTop: 'var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                        Showing {characterizations.length} characterization{characterizations.length !== 1 ? 's' : ''}
+                        Showing {sortedData.length} characterization{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

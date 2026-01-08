@@ -10,13 +10,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSupports, useDeleteSupport } from '@/hooks/useSupports';
-import { Button, TextInput } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, SortableHeader } from '@/components/common';
 import type { Support } from '@/services/api';
 
 export const SupportListPage: React.FC = () => {
     const [search, setSearch] = useState('');
 
     const { data: supports, isLoading, error } = useSupports({ search });
+    const { sortedData, requestSort, getSortDirection } = useSortableData(supports, { key: 'descriptive_name', direction: 'asc' });
     const deleteMutation = useDeleteSupport();
 
     const handleDelete = (support: Support) => {
@@ -61,7 +63,7 @@ export const SupportListPage: React.FC = () => {
 
             {supports && (
                 <>
-                    {supports.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No supports found</h3>
                             <p className="empty-state-description">
@@ -78,14 +80,14 @@ export const SupportListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Description</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <SortableHeader label="Name" sortKey="descriptive_name" currentDirection={getSortDirection('descriptive_name')} onSort={requestSort} />
+                                    <SortableHeader label="Description" sortKey="description" currentDirection={getSortDirection('description')} onSort={requestSort} />
+                                    <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {supports.map((support) => (
+                                {sortedData.map((support) => (
                                     <tr key={support.id}>
                                         <td>{support.descriptive_name}</td>
                                         <td style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

@@ -9,7 +9,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useReactors, useDeleteReactor } from '@/hooks/useReactors';
-import { Button, TextInput, Badge } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, Badge, SortableHeader } from '@/components/common';
 import type { Reactor } from '@/services/api';
 import { format } from 'date-fns';
 
@@ -20,6 +21,7 @@ export const ReactorListPage: React.FC = () => {
         search: search || undefined,
         include: 'experiments',
     });
+    const { sortedData, requestSort, getSortDirection } = useSortableData(reactors, { key: 'name', direction: 'asc' });
     const deleteMutation = useDeleteReactor();
 
     const handleDelete = (reactor: Reactor) => {
@@ -64,7 +66,7 @@ export const ReactorListPage: React.FC = () => {
 
             {reactors && (
                 <>
-                    {reactors.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No reactors found</h3>
                             <p className="empty-state-description">
@@ -83,16 +85,16 @@ export const ReactorListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Description</th>
-                                    <th>Volume</th>
-                                    <th>Experiments</th>
-                                    <th>Created</th>
-                                    <th style={{ width: '150px' }}>Actions</th>
+                                    <SortableHeader label="Name" sortKey="name" currentDirection={getSortDirection('name')} onSort={requestSort} />
+                                    <SortableHeader label="Description" sortKey="description" currentDirection={getSortDirection('description')} onSort={requestSort} />
+                                    <SortableHeader label="Volume" sortKey="volume" currentDirection={getSortDirection('volume')} onSort={requestSort} />
+                                    <SortableHeader label="Experiments" sortKey="experiment_count" currentDirection={getSortDirection('experiment_count')} onSort={requestSort} />
+                                    <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', width: '150px' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {reactors.map((reactor) => (
+                                {sortedData.map((reactor) => (
                                     <tr key={reactor.id}>
                                         <td>
                                             <Link
@@ -145,7 +147,7 @@ export const ReactorListPage: React.FC = () => {
                         </div>
                     )}
                     <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
-                        {reactors.length} reactor{reactors.length !== 1 ? 's' : ''}
+                        {sortedData.length} reactor{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

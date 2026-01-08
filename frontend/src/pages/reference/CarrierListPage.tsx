@@ -8,7 +8,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCarriers, useDeleteCarrier } from '@/hooks/useCarriers.ts';
-import { Button, TextInput } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, SortableHeader } from '@/components/common';
 import type { Carrier } from '@/services/api';
 import { format } from 'date-fns';
 
@@ -16,6 +17,7 @@ export const CarrierListPage: React.FC = () => {
     const [search, setSearch] = useState('');
 
     const { data: carriers, isLoading, error } = useCarriers({ search: search || undefined });
+    const { sortedData, requestSort, getSortDirection } = useSortableData(carriers, { key: 'name', direction: 'asc' });
     const deleteMutation = useDeleteCarrier();
 
     const handleDelete = (carrier: Carrier) => {
@@ -60,7 +62,7 @@ export const CarrierListPage: React.FC = () => {
 
             {carriers && (
                 <>
-                    {carriers.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No carriers found</h3>
                             <p className="empty-state-description">
@@ -79,13 +81,13 @@ export const CarrierListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Created</th>
-                                    <th style={{ width: '150px' }}>Actions</th>
+                                    <SortableHeader label="Name" sortKey="name" currentDirection={getSortDirection('name')} onSort={requestSort} />
+                                    <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', width: '150px' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {carriers.map((carrier) => (
+                                {sortedData.map((carrier) => (
                                     <tr key={carrier.id}>
                                         <td>
                                             <Link
@@ -120,7 +122,7 @@ export const CarrierListPage: React.FC = () => {
                         </div>
                     )}
                     <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
-                        {carriers.length} carrier{carriers.length !== 1 ? 's' : ''}
+                        {sortedData.length} carrier{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

@@ -18,13 +18,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useChemicals, useDeleteChemical } from '@/hooks/useChemicals';
-import { Button, TextInput } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, SortableHeader } from '@/components/common';
 import type { Chemical } from '@/services/api';
 
 export const ChemicalListPage: React.FC = () => {
     const [search, setSearch] = useState('');
 
     const { data: chemicals, isLoading, error } = useChemicals({ search });
+    const { sortedData, requestSort, getSortDirection } = useSortableData(chemicals, { key: 'name', direction: 'asc' });
     const deleteMutation = useDeleteChemical();
 
     const handleDelete = (chemical: Chemical) => {
@@ -69,7 +71,7 @@ export const ChemicalListPage: React.FC = () => {
 
             {chemicals && (
                 <>
-                    {chemicals.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No chemicals found</h3>
                             <p className="empty-state-description">
@@ -86,13 +88,13 @@ export const ChemicalListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <SortableHeader label="Name" sortKey="name" currentDirection={getSortDirection('name')} onSort={requestSort} />
+                                    <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {chemicals.map((chemical) => (
+                                {sortedData.map((chemical) => (
                                     <tr key={chemical.id}>
                                         <td>{chemical.name}</td>
                                         <td>{new Date(chemical.created_at).toLocaleDateString()}</td>

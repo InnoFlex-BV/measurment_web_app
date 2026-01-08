@@ -8,7 +8,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWaveforms, useDeleteWaveform } from '@/hooks/useWaveforms';
-import { Button, TextInput }  from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, SortableHeader } from '@/components/common';
 import type { Waveform } from '@/services/api';
 import { format } from 'date-fns';
 
@@ -16,6 +17,7 @@ export const WaveformListPage: React.FC = () => {
     const [search, setSearch] = useState('');
 
     const { data: waveforms, isLoading, error } = useWaveforms({ search: search || undefined });
+    const { sortedData, requestSort, getSortDirection } = useSortableData(waveforms, { key: 'name', direction: 'asc' });
     const deleteMutation = useDeleteWaveform();
 
     const handleDelete = (waveform: Waveform) => {
@@ -78,7 +80,7 @@ export const WaveformListPage: React.FC = () => {
 
             {waveforms && (
                 <>
-                    {waveforms.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No waveforms found</h3>
                             <p className="empty-state-description">
@@ -97,17 +99,17 @@ export const WaveformListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>AC Frequency</th>
-                                    <th>AC Duty Cycle</th>
-                                    <th>Pulsing Freq</th>
-                                    <th>Pulsing Duty</th>
-                                    <th>Created</th>
-                                    <th style={{ width: '150px' }}>Actions</th>
+                                    <SortableHeader label="Name" sortKey="name" currentDirection={getSortDirection('name')} onSort={requestSort} />
+                                    <SortableHeader label="AC Frequency" sortKey="ac_frequency" currentDirection={getSortDirection('ac_frequency')} onSort={requestSort} />
+                                    <SortableHeader label="AC Duty Cycle" sortKey="ac_duty_cycle" currentDirection={getSortDirection('ac_duty_cycle')} onSort={requestSort} />
+                                    <SortableHeader label="Pulsing Freq" sortKey="pulsing_frequency" currentDirection={getSortDirection('pulsing_frequency')} onSort={requestSort} />
+                                    <SortableHeader label="Pulsing Duty" sortKey="pulsing_duty_cycle" currentDirection={getSortDirection('pulsing_duty_cycle')} onSort={requestSort} />
+                                    <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', width: '150px' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {waveforms.map((waveform) => (
+                                {sortedData.map((waveform) => (
                                     <tr key={waveform.id}>
                                         <td>
                                             <Link
@@ -146,7 +148,7 @@ export const WaveformListPage: React.FC = () => {
                         </div>
                     )}
                     <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
-                        {waveforms.length} waveform{waveforms.length !== 1 ? 's' : ''}
+                        {sortedData.length} waveform{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

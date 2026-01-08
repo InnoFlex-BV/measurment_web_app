@@ -12,7 +12,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFiles, useDeleteFile, useRestoreFile } from '@/hooks/useFiles';
-import { Button, TextInput, Select, Badge } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, Select, Badge, SortableHeader } from '@/components/common';
 import type { FileMetadata } from '@/services/api';
 import { format } from 'date-fns';
 
@@ -49,6 +50,7 @@ export const FileListPage: React.FC = () => {
         include: 'uploader',
     });
 
+    const { sortedData, requestSort, getSortDirection } = useSortableData(files, { key: 'filename', direction: 'asc' });
     const deleteMutation = useDeleteFile();
     const restoreMutation = useRestoreFile();
 
@@ -142,17 +144,17 @@ export const FileListPage: React.FC = () => {
                             <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                 <tr style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
-                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Filename</th>
-                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Type</th>
-                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Size</th>
-                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Uploaded By</th>
-                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Created</th>
-                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Status</th>
+                                    <SortableHeader label="Filename" sortKey="filename" currentDirection={getSortDirection('filename')} onSort={requestSort} />
+                                    <SortableHeader label="Type" sortKey="mime_type" currentDirection={getSortDirection('mime_type')} onSort={requestSort} />
+                                    <SortableHeader label="Size" sortKey="file_size" currentDirection={getSortDirection('file_size')} onSort={requestSort} />
+                                    <SortableHeader label="Uploaded By" sortKey="uploader.full_name" currentDirection={getSortDirection('uploader.full_name')} onSort={requestSort} />
+                                    <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                    <SortableHeader label="Status" sortKey="is_deleted" currentDirection={getSortDirection('is_deleted')} onSort={requestSort} />
                                     <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {files.map((file) => (
+                                {sortedData.map((file) => (
                                     <tr
                                         key={file.id}
                                         style={{
@@ -228,7 +230,7 @@ export const FileListPage: React.FC = () => {
                     )}
 
                     <p style={{ marginTop: 'var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                        Showing {files.length} file{files.length !== 1 ? 's' : ''}
+                        Showing {sortedData.length} file{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

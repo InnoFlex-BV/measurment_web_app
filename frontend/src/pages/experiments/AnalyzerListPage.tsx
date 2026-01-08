@@ -8,7 +8,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAnalyzers, useDeleteAnalyzer } from '@/hooks/useAnalyzers';
-import { Button, TextInput, Select, Badge } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, Select, Badge, SortableHeader } from '@/components/common';
 import {
     type Analyzer,
     type AnalyzerType,
@@ -27,6 +28,7 @@ export const AnalyzerListPage: React.FC = () => {
         analyzer_type: typeFilter || undefined,
         include: 'experiments',
     });
+    const { sortedData, requestSort, getSortDirection } = useSortableData(analyzers, { key: 'name', direction: 'asc' });
     const deleteMutation = useDeleteAnalyzer();
 
     const handleDelete = (analyzer: Analyzer) => {
@@ -113,7 +115,7 @@ export const AnalyzerListPage: React.FC = () => {
 
             {analyzers && (
                 <>
-                    {analyzers.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No analyzers found</h3>
                             <p className="empty-state-description">
@@ -132,16 +134,16 @@ export const AnalyzerListPage: React.FC = () => {
                             <table className="table">
                                 <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Type</th>
-                                    <th>Configuration</th>
-                                    <th>Experiments</th>
-                                    <th>Created</th>
-                                    <th style={{ width: '150px' }}>Actions</th>
+                                    <SortableHeader label="Name" sortKey="name" currentDirection={getSortDirection('name')} onSort={requestSort} />
+                                    <SortableHeader label="Type" sortKey="analyzer_type" currentDirection={getSortDirection('analyzer_type')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>Configuration</th>
+                                    <SortableHeader label="Experiments" sortKey="experiment_count" currentDirection={getSortDirection('experiment_count')} onSort={requestSort} />
+                                    <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                    <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', width: '150px' }}>Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {analyzers.map((analyzer) => (
+                                {sortedData.map((analyzer) => (
                                     <tr key={analyzer.id}>
                                         <td>
                                             <Link
@@ -201,7 +203,7 @@ export const AnalyzerListPage: React.FC = () => {
                         </div>
                     )}
                     <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
-                        {analyzers.length} analyzer{analyzers.length !== 1 ? 's' : ''}
+                        {sortedData.length} analyzer{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

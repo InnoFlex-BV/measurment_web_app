@@ -9,7 +9,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGroups, useDeleteGroup } from '@/hooks/useGroups.ts';
-import { Button, TextInput, Badge } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, Badge, SortableHeader } from '@/components/common';
 import type { Group } from '@/services/api';
 import { format } from 'date-fns';
 
@@ -20,6 +21,7 @@ export const GroupListPage: React.FC = () => {
         search: search || undefined,
         include: 'experiments',
     });
+    const { sortedData, requestSort, getSortDirection } = useSortableData(groups, { key: 'name', direction: 'asc' });
     const deleteMutation = useDeleteGroup();
 
     const handleDelete = (group: Group) => {
@@ -64,7 +66,7 @@ export const GroupListPage: React.FC = () => {
 
             {groups && (
                 <>
-                    {groups.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="empty-state">
                             <h3 className="empty-state-title">No groups found</h3>
                             <p className="empty-state-description">
@@ -79,63 +81,98 @@ export const GroupListPage: React.FC = () => {
                             )}
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
-                            {groups.map((group) => (
-                                <div key={group.id} className="card">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                            <div style={{ overflowX: 'auto' }}>
+                                <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+                                    <thead>
+                                    <tr style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
+                                        <SortableHeader label="Name" sortKey="name" currentDirection={getSortDirection('name')} onSort={requestSort} />
+                                        <SortableHeader label="Purpose" sortKey="purpose" currentDirection={getSortDirection('purpose')} onSort={requestSort} />
+                                        <SortableHeader label="Conclusion" sortKey="conclusion" currentDirection={getSortDirection('conclusion')} onSort={requestSort} />
+                                        <SortableHeader label="Experiments" sortKey="experiment_count" currentDirection={getSortDirection('experiment_count')} onSort={requestSort} />
+                                        <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {sortedData.map((group) => (
+                                        <tr key={group.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
                                                 <Link
                                                     to={`/groups/${group.id}`}
-                                                    style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}
+                                                    style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}
                                                 >
                                                     {group.name}
                                                 </Link>
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', maxWidth: '250px' }}>
+                                                {group.purpose ? (
+                                                    <span style={{
+                                                        display: 'block',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        color: 'var(--color-text-secondary)',
+                                                        fontSize: '0.875rem',
+                                                    }}>
+                                                        {group.purpose}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', maxWidth: '250px' }}>
+                                                {group.conclusion ? (
+                                                    <span style={{
+                                                        display: 'block',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        color: 'var(--color-text-secondary)',
+                                                        fontSize: '0.875rem',
+                                                        fontStyle: 'italic',
+                                                    }}>
+                                                        {group.conclusion}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
                                                 <Badge variant="info">
-                                                    {group.experiment_count || group.experiments?.length || 0} experiments
+                                                    {group.experiment_count || group.experiments?.length || 0}
                                                 </Badge>
-                                            </div>
-                                            {group.purpose && (
-                                                <p style={{ margin: 'var(--spacing-xs) 0 0 0', color: 'var(--color-text-secondary)' }}>
-                                                    {group.purpose}
-                                                </p>
-                                            )}
-                                            {group.conclusion && (
-                                                <p style={{
-                                                    margin: 'var(--spacing-sm) 0 0 0',
-                                                    fontSize: '0.875rem',
-                                                    color: 'var(--color-text-secondary)',
-                                                    fontStyle: 'italic',
-                                                }}>
-                                                    Conclusion: {group.conclusion.length > 100
-                                                    ? group.conclusion.substring(0, 100) + '...'
-                                                    : group.conclusion}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
                                                 {format(new Date(group.created_at), 'MMM d, yyyy')}
-                                            </span>
-                                            <Link to={`/groups/${group.id}/edit`}>
-                                                <Button variant="secondary" size="sm">Edit</Button>
-                                            </Link>
-                                            <Button
-                                                variant="danger"
-                                                size="sm"
-                                                onClick={() => handleDelete(group)}
-                                                disabled={deleteMutation.isPending}
-                                            >
-                                                Delete
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>
+                                                <div style={{ display: 'flex', gap: 'var(--spacing-xs)', justifyContent: 'flex-end' }}>
+                                                    <Link to={`/groups/${group.id}`}>
+                                                        <Button variant="secondary" size="sm">View</Button>
+                                                    </Link>
+                                                    <Link to={`/groups/${group.id}/edit`}>
+                                                        <Button variant="secondary" size="sm">Edit</Button>
+                                                    </Link>
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(group)}
+                                                        disabled={deleteMutation.isPending}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
                     <p style={{ marginTop: 'var(--spacing-md)', color: 'var(--color-text-secondary)' }}>
-                        {groups.length} group{groups.length !== 1 ? 's' : ''}
+                        {sortedData.length} group{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

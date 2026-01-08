@@ -8,7 +8,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useObservations, useDeleteObservation } from '@/hooks/useObservations';
-import { Button, TextInput, Select, Badge } from '@/components/common';
+import { useSortableData } from '@/hooks';
+import { Button, TextInput, Select, Badge, SortableHeader } from '@/components/common';
 import type { Observation } from '@/services/api';
 import { format } from 'date-fns';
 
@@ -24,27 +25,13 @@ export const ObservationListPage: React.FC = () => {
         include: 'users,catalysts,samples,files',
     });
 
+    const { sortedData, requestSort, getSortDirection } = useSortableData(observations, { key: 'created_at', direction: 'desc' });
     const deleteMutation = useDeleteObservation();
 
     const handleDelete = (obs: Observation) => {
         if (window.confirm(`Are you sure you want to delete observation "${obs.objective}"?`)) {
             deleteMutation.mutate(obs.id);
         }
-    };
-
-    // Helper to format conditions for display
-    const formatConditions = (conditions: Record<string, unknown>) => {
-        const parts: string[] = [];
-        if (conditions.temperature) {
-            parts.push(`${conditions.temperature}${conditions.temperature_unit || '°C'}`);
-        }
-        if (conditions.atmosphere) {
-            parts.push(String(conditions.atmosphere));
-        }
-        if (conditions.duration) {
-            parts.push(`${conditions.duration} ${conditions.duration_unit || 'hrs'}`);
-        }
-        return parts.join(' / ') || null;
     };
 
     return (
@@ -102,131 +89,147 @@ export const ObservationListPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Observations Grid */}
+            {/* Observations Table */}
             {observations && (
                 <>
-                    {observations.length === 0 ? (
+                    {sortedData.length === 0 ? (
                         <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
                             <p style={{ color: 'var(--color-text-secondary)' }}>
                                 No observations found. {search && 'Try adjusting your filters.'}
                             </p>
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: 'var(--spacing-md)' }}>
-                            {observations.map((obs) => (
-                                <div
-                                    key={obs.id}
-                                    className="card"
-                                    style={{ display: 'flex', flexDirection: 'column' }}
-                                >
-                                    {/* Header */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-sm)' }}>
-                                        <Link
-                                            to={`/observations/${obs.id}`}
-                                            style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600, fontSize: '1rem', flex: 1 }}
-                                        >
-                                            {obs.objective}
-                                        </Link>
-                                        {obs.has_calcination_data && (
-                                            <Badge variant="warning" size="sm">Calcination</Badge>
-                                        )}
-                                    </div>
-
-                                    {/* Conditions Preview */}
-                                    {formatConditions(obs.conditions) && (
-                                        <p style={{
-                                            margin: '0 0 var(--spacing-xs)',
-                                            fontSize: '0.75rem',
-                                            color: 'var(--color-text-secondary)',
-                                            fontFamily: 'monospace',
-                                        }}>
-                                            {formatConditions(obs.conditions)}
-                                        </p>
-                                    )}
-
-                                    {/* Observations Preview */}
-                                    <p style={{
-                                        flex: 1,
-                                        margin: 0,
-                                        marginBottom: 'var(--spacing-sm)',
-                                        fontSize: '0.875rem',
-                                        color: 'var(--color-text-secondary)',
-                                        overflow: 'hidden',
-                                        display: '-webkit-box',
-                                        WebkitLineClamp: 3,
-                                        WebkitBoxOrient: 'vertical',
-                                    }}>
-                                        {obs.observations_text}
-                                    </p>
-
-                                    {/* Conclusions Preview */}
-                                    <p style={{
-                                        margin: 0,
-                                        marginBottom: 'var(--spacing-sm)',
-                                        fontSize: '0.8rem',
-                                        fontStyle: 'italic',
-                                        color: 'var(--color-text-secondary)',
-                                        overflow: 'hidden',
-                                        display: '-webkit-box',
-                                        WebkitLineClamp: 2,
-                                        WebkitBoxOrient: 'vertical',
-                                    }}>
-                                        Conclusion: {obs.conclusions}
-                                    </p>
-
-                                    {/* Meta Info */}
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-sm)' }}>
-                                        {obs.users && obs.users.length > 0 && (
-                                            <span>
-                                                By {obs.users.map(u => u.full_name || u.username).join(', ')}
-                                            </span>
-                                        )}
-                                        <span> {format(new Date(obs.created_at), 'MMM d, yyyy')}</span>
-                                    </div>
-
-                                    {/* Links & Attachments */}
-                                    <div style={{ display: 'flex', gap: 'var(--spacing-xs)', flexWrap: 'wrap', marginBottom: 'var(--spacing-sm)' }}>
-                                        {(obs.catalyst_count ?? 0) > 0 && (
-                                            <Badge variant="info" size="sm">
-                                                {obs.catalyst_count} catalyst{obs.catalyst_count !== 1 ? 's' : ''}
-                                            </Badge>
-                                        )}
-                                        {(obs.sample_count ?? 0) > 0 && (
-                                            <Badge variant="success" size="sm">
-                                                {obs.sample_count} sample{obs.sample_count !== 1 ? 's' : ''}
-                                            </Badge>
-                                        )}
-                                        {(obs.file_count ?? 0) > 0 && (
-                                            <Badge variant="neutral" size="sm">
-                                                {obs.file_count} file{obs.file_count !== 1 ? 's' : ''}
-                                            </Badge>
-                                        )}
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div style={{ display: 'flex', gap: 'var(--spacing-xs)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--spacing-sm)', marginTop: 'auto' }}>
-                                        <Link to={`/observations/${obs.id}`}>
-                                            <Button variant="secondary" size="sm">View</Button>
-                                        </Link>
-                                        <Link to={`/observations/${obs.id}/edit`}>
-                                            <Button variant="secondary" size="sm">Edit</Button>
-                                        </Link>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => handleDelete(obs)}
-                                            disabled={deleteMutation.isPending}
-                                        >
-                                            Delete
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                            <div style={{ overflowX: 'auto' }}>
+                                <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+                                    <thead>
+                                    <tr style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
+                                        <SortableHeader label="Objective" sortKey="objective" currentDirection={getSortDirection('objective')} onSort={requestSort} />
+                                        <SortableHeader label="Conclusions" sortKey="conclusions" currentDirection={getSortDirection('conclusions')} onSort={requestSort} />
+                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Researchers</th>
+                                        <SortableHeader label="Calcination" sortKey="has_calcination_data" currentDirection={getSortDirection('has_calcination_data')} onSort={requestSort} />
+                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Links</th>
+                                        <SortableHeader label="Created" sortKey="created_at" currentDirection={getSortDirection('created_at')} onSort={requestSort} />
+                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {sortedData.map((obs) => (
+                                        <tr key={obs.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', maxWidth: '250px' }}>
+                                                <Link
+                                                    to={`/observations/${obs.id}`}
+                                                    style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}
+                                                >
+                                                    <span style={{
+                                                        display: 'block',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}>
+                                                        {obs.objective}
+                                                    </span>
+                                                </Link>
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', maxWidth: '300px' }}>
+                                                <span style={{
+                                                    display: 'block',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    fontSize: '0.875rem',
+                                                    color: 'var(--color-text-secondary)',
+                                                    fontStyle: 'italic',
+                                                }}>
+                                                    {obs.conclusions || '—'}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
+                                                {obs.users && obs.users.length > 0 ? (
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                                                        {obs.users.slice(0, 2).map((user) => (
+                                                            <Link
+                                                                key={user.id}
+                                                                to={`/users/${user.id}`}
+                                                                style={{
+                                                                    color: 'var(--color-primary)',
+                                                                    textDecoration: 'none',
+                                                                    fontSize: '0.875rem',
+                                                                }}
+                                                            >
+                                                                {user.full_name || user.username}
+                                                            </Link>
+                                                        ))}
+                                                        {obs.users.length > 2 && (
+                                                            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                                                                +{obs.users.length - 2} more
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
+                                                {obs.has_calcination_data ? (
+                                                    <Badge variant="warning" size="sm">Yes</Badge>
+                                                ) : (
+                                                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>No</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
+                                                <div style={{ display: 'flex', gap: 'var(--spacing-xs)', flexWrap: 'wrap' }}>
+                                                    {(obs.catalyst_count ?? 0) > 0 && (
+                                                        <Badge variant="info" size="sm">
+                                                            {obs.catalyst_count} catalyst{obs.catalyst_count !== 1 ? 's' : ''}
+                                                        </Badge>
+                                                    )}
+                                                    {(obs.sample_count ?? 0) > 0 && (
+                                                        <Badge variant="success" size="sm">
+                                                            {obs.sample_count} sample{obs.sample_count !== 1 ? 's' : ''}
+                                                        </Badge>
+                                                    )}
+                                                    {(obs.file_count ?? 0) > 0 && (
+                                                        <Badge variant="neutral" size="sm">
+                                                            {obs.file_count} file{obs.file_count !== 1 ? 's' : ''}
+                                                        </Badge>
+                                                    )}
+                                                    {(obs.catalyst_count ?? 0) === 0 && (obs.sample_count ?? 0) === 0 && (obs.file_count ?? 0) === 0 && (
+                                                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>No links</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                                                {format(new Date(obs.created_at), 'MMM d, yyyy')}
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>
+                                                <div style={{ display: 'flex', gap: 'var(--spacing-xs)', justifyContent: 'flex-end' }}>
+                                                    <Link to={`/observations/${obs.id}`}>
+                                                        <Button variant="secondary" size="sm">View</Button>
+                                                    </Link>
+                                                    <Link to={`/observations/${obs.id}/edit`}>
+                                                        <Button variant="secondary" size="sm">Edit</Button>
+                                                    </Link>
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(obs)}
+                                                        disabled={deleteMutation.isPending}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
 
                     <p style={{ marginTop: 'var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                        Showing {observations.length} observation{observations.length !== 1 ? 's' : ''}
+                        Showing {sortedData.length} observation{sortedData.length !== 1 ? 's' : ''}
                     </p>
                 </>
             )}

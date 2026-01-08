@@ -16,6 +16,7 @@ export { Select } from './Select';
 export { Button } from './Button';
 export { Badge } from './Badge';
 export { RelationshipManager } from './RelationshipManager';
+export { SortableHeader } from './SortableHeader';
 
 // Type exports
 export type { FormFieldProps } from './FormField';
