@@ -1,16 +1,37 @@
 /**
  * CharacterizationDetailPage - Detail view for a single characterization.
  *
- * Displays comprehensive characterization information including type-specific
- * details, linked files, and relationships to catalysts and samples.
+ * Displays comprehensive characterization information including type,
+ * description, linked files, and relationships to catalysts, samples, and users
+ * with add/remove management capabilities.
  */
 
 import React from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useCharacterization, useDeleteCharacterization } from '@/hooks/useCharacterizations';
-import { Button, Badge } from '@/components/common';
-import { CHARACTERIZATION_TYPE_LABELS } from '@/services/api';
+import {
+    useCharacterization,
+    useDeleteCharacterization,
+    useAddCatalystToCharacterization,
+    useRemoveCatalystFromCharacterization,
+    useAddSampleToCharacterization,
+    useRemoveSampleFromCharacterization,
+    useAddUserToCharacterization,
+    useRemoveUserFromCharacterization,
+} from '@/hooks/useCharacterizations';
+import { useCatalysts } from '@/hooks/useCatalysts';
+import { useSamples } from '@/hooks/useSamples';
+import { useUsers } from '@/hooks/useUsers';
+import { Button, Badge, RelationshipManager } from '@/components/common';
+import { CHARACTERIZATION_TYPE_LABELS, type CharacterizationType } from '@/services/api';
 import { format } from 'date-fns';
+import type {
+    CatalystSimple,
+    Catalyst,
+    SampleSimple,
+    Sample,
+    UserSimple,
+    User,
+} from '@/services/api';
 
 export const CharacterizationDetailPage: React.FC = () => {
     const navigate = useNavigate();
@@ -20,14 +41,27 @@ export const CharacterizationDetailPage: React.FC = () => {
     // Fetch characterization with all relationships
     const { data: char, isLoading, error } = useCharacterization(
         characterizationId,
-        'performed_by,raw_data_file,processed_data_file,catalysts,samples'
+        'users,raw_data_file,processed_data_file,catalysts,samples'
     );
 
+    // Fetch available items for relationship management
+    const { data: allCatalysts, isLoading: isLoadingCatalysts } = useCatalysts({});
+    const { data: allSamples, isLoading: isLoadingSamples } = useSamples({});
+    const { data: allUsers, isLoading: isLoadingUsers } = useUsers({ is_active: true });
+
+    // Mutations
     const deleteMutation = useDeleteCharacterization();
+    const addCatalystMutation = useAddCatalystToCharacterization();
+    const removeCatalystMutation = useRemoveCatalystFromCharacterization();
+    const addSampleMutation = useAddSampleToCharacterization();
+    const removeSampleMutation = useRemoveSampleFromCharacterization();
+    const addUserMutation = useAddUserToCharacterization();
+    const removeUserMutation = useRemoveUserFromCharacterization();
 
     const handleDelete = () => {
         if (!char) return;
-        if (window.confirm(`Are you sure you want to delete characterization "${char.name}"?`)) {
+        const typeLabel = CHARACTERIZATION_TYPE_LABELS[char.type_name as CharacterizationType] || char.type_name;
+        if (window.confirm(`Are you sure you want to delete this ${typeLabel} characterization?`)) {
             deleteMutation.mutate(char.id, {
                 onSuccess: () => navigate('/characterizations'),
             });
@@ -59,18 +93,18 @@ export const CharacterizationDetailPage: React.FC = () => {
         );
     }
 
+    const typeLabel = CHARACTERIZATION_TYPE_LABELS[char.type_name as CharacterizationType] || char.type_name;
+
     return (
         <div className="container">
             {/* Page Header */}
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
-                        <h1 className="page-title" style={{ margin: 0 }}>{char.name}</h1>
-                        <Badge variant="info">{char.characterization_type}</Badge>
+                        <h1 className="page-title" style={{ margin: 0 }}>{typeLabel}</h1>
+                        <Badge variant="info">{char.type_name}</Badge>
                     </div>
-                    <p className="page-description">
-                        {CHARACTERIZATION_TYPE_LABELS[char.characterization_type]} • Record #{char.id}
-                    </p>
+                    <p className="page-description">Characterization #{char.id}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                     <Link to="/characterizations">
@@ -85,239 +119,212 @@ export const CharacterizationDetailPage: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-lg)' }}>
-                {/* Basic Information */}
-                <div className="card">
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                        Measurement Details
-                    </h2>
-                    <dl style={{ margin: 0 }}>
-                        <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Type
-                            </dt>
-                            <dd style={{ margin: 0, fontWeight: 500 }}>
-                                {CHARACTERIZATION_TYPE_LABELS[char.characterization_type]}
-                            </dd>
-                        </div>
-                        <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Performed By
-                            </dt>
-                            <dd style={{ margin: 0 }}>
-                                {char.performed_by ? (
-                                    <Link to={`/users/${char.performed_by.id}`} style={{ color: 'var(--color-primary)' }}>
-                                        {char.performed_by.full_name || char.performed_by.username}
-                                    </Link>
-                                ) : (
-                                    <span style={{ color: 'var(--color-text-secondary)' }}>Not recorded</span>
-                                )}
-                            </dd>
-                        </div>
-                        <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Date Performed
-                            </dt>
-                            <dd style={{ margin: 0 }}>
-                                {char.performed_at
-                                    ? format(new Date(char.performed_at), 'MMMM d, yyyy')
-                                    : <span style={{ color: 'var(--color-text-secondary)' }}>Not recorded</span>}
-                            </dd>
-                        </div>
-                        <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Equipment Used
-                            </dt>
-                            <dd style={{ margin: 0 }}>
-                                {char.equipment_used || <span style={{ color: 'var(--color-text-secondary)' }}>Not specified</span>}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Conditions
-                            </dt>
-                            <dd style={{ margin: 0 }}>
-                                {char.conditions || <span style={{ color: 'var(--color-text-secondary)' }}>Not specified</span>}
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
-
-                {/* Data Files */}
-                <div className="card">
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                        Data Files
-                    </h2>
-                    <dl style={{ margin: 0 }}>
-                        <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Raw Data
-                            </dt>
-                            <dd style={{ margin: 0 }}>
-                                {char.raw_data_file ? (
-                                    <Link
-                                        to={`/files/${char.raw_data_file.id}`}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--spacing-xs)',
-                                            padding: 'var(--spacing-xs) var(--spacing-sm)',
-                                            backgroundColor: 'var(--color-bg-secondary)',
-                                            borderRadius: 'var(--border-radius)',
-                                            color: 'var(--color-primary)',
-                                            textDecoration: 'none',
-                                        }}
-                                    >
-                                        📄 {char.raw_data_file.filename}
-                                    </Link>
-                                ) : (
-                                    <span style={{ color: 'var(--color-text-secondary)' }}>No file attached</span>
-                                )}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Processed Data
-                            </dt>
-                            <dd style={{ margin: 0 }}>
-                                {char.processed_data_file ? (
-                                    <Link
-                                        to={`/files/${char.processed_data_file.id}`}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--spacing-xs)',
-                                            padding: 'var(--spacing-xs) var(--spacing-sm)',
-                                            backgroundColor: 'var(--color-bg-secondary)',
-                                            borderRadius: 'var(--border-radius)',
-                                            color: 'var(--color-primary)',
-                                            textDecoration: 'none',
-                                        }}
-                                    >
-                                        📄 {char.processed_data_file.filename}
-                                    </Link>
-                                ) : (
-                                    <span style={{ color: 'var(--color-text-secondary)' }}>No file attached</span>
-                                )}
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
-
-                {/* Record Info */}
-                <div className="card">
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                        Record Information
-                    </h2>
-                    <dl style={{ margin: 0 }}>
-                        <div style={{ marginBottom: 'var(--spacing-sm)' }}>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Created At
-                            </dt>
-                            <dd style={{ margin: 0 }}>
-                                {format(new Date(char.created_at), 'MMMM d, yyyy \'at\' h:mm a')}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Last Updated
-                            </dt>
-                            <dd style={{ margin: 0 }}>
-                                {format(new Date(char.updated_at), 'MMMM d, yyyy \'at\' h:mm a')}
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
-            </div>
-
-            {/* Notes */}
-            {char.notes && (
-                <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
-                        Notes
-                    </h2>
-                    <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{char.notes}</p>
-                </div>
-            )}
-
-            {/* Linked Catalysts */}
-            <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
-                        Linked Catalysts ({char.catalysts?.length || 0})
-                    </h2>
-                </div>
-                {char.catalysts && char.catalysts.length > 0 ? (
-                    <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
-                        {char.catalysts.map((catalyst) => (
-                            <Link
-                                key={catalyst.id}
-                                to={`/catalysts/${catalyst.id}`}
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: 'var(--spacing-sm) var(--spacing-md)',
-                                    backgroundColor: 'var(--color-bg-secondary)',
-                                    borderRadius: 'var(--border-radius)',
-                                    textDecoration: 'none',
-                                    color: 'inherit',
-                                }}
-                            >
-                                <span style={{ fontWeight: 500, color: 'var(--color-primary)' }}>
-                                    {catalyst.name}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--spacing-lg)' }}>
+                {/* Main Content */}
+                <div>
+                    {/* Description */}
+                    <div className="card">
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                            Description
+                        </h2>
+                        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                            {char.description || (
+                                <span style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                                    No description provided
                                 </span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                                    {catalyst.storage_location}
-                                </span>
-                            </Link>
-                        ))}
+                            )}
+                        </div>
                     </div>
-                ) : (
-                    <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-                        This characterization is not linked to any catalysts.
-                    </p>
-                )}
-            </div>
 
-            {/* Linked Samples */}
-            <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0 }}>
-                        Linked Samples ({char.samples?.length || 0})
-                    </h2>
-                </div>
-                {char.samples && char.samples.length > 0 ? (
-                    <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
-                        {char.samples.map((sample) => (
-                            <Link
-                                key={sample.id}
-                                to={`/samples/${sample.id}`}
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: 'var(--spacing-sm) var(--spacing-md)',
-                                    backgroundColor: 'var(--color-bg-secondary)',
-                                    borderRadius: 'var(--border-radius)',
-                                    textDecoration: 'none',
-                                    color: 'inherit',
-                                }}
-                            >
-                                <span style={{ fontWeight: 500, color: 'var(--color-primary)' }}>
-                                    {sample.name}
-                                </span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                                    {sample.storage_location}
-                                </span>
-                            </Link>
-                        ))}
+                    {/* Data Files */}
+                    <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                            Data Files
+                        </h2>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+                            <div>
+                                <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                                    Raw Data
+                                </dt>
+                                <dd style={{ margin: 0 }}>
+                                    {char.raw_data_file ? (
+                                        <Link
+                                            to={`/files/${char.raw_data_file.id}`}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-xs)',
+                                                padding: 'var(--spacing-xs) var(--spacing-sm)',
+                                                backgroundColor: 'var(--color-bg-secondary)',
+                                                borderRadius: 'var(--border-radius)',
+                                                color: 'var(--color-primary)',
+                                                textDecoration: 'none',
+                                            }}
+                                        >
+                                            {char.raw_data_file.filename}
+                                        </Link>
+                                    ) : (
+                                        <span style={{ color: 'var(--color-text-secondary)' }}>No file attached</span>
+                                    )}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                                    Processed Data
+                                </dt>
+                                <dd style={{ margin: 0 }}>
+                                    {char.processed_data_file ? (
+                                        <Link
+                                            to={`/files/${char.processed_data_file.id}`}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-xs)',
+                                                padding: 'var(--spacing-xs) var(--spacing-sm)',
+                                                backgroundColor: 'var(--color-bg-secondary)',
+                                                borderRadius: 'var(--border-radius)',
+                                                color: 'var(--color-primary)',
+                                                textDecoration: 'none',
+                                            }}
+                                        >
+                                            {char.processed_data_file.filename}
+                                        </Link>
+                                    ) : (
+                                        <span style={{ color: 'var(--color-text-secondary)' }}>No file attached</span>
+                                    )}
+                                </dd>
+                            </div>
+                        </div>
+                        <p style={{ marginTop: 'var(--spacing-md)', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                            To change linked files, use the Edit button above.
+                        </p>
                     </div>
-                ) : (
-                    <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-                        This characterization is not linked to any samples.
-                    </p>
-                )}
+
+                    {/* Catalysts Relationship Manager */}
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <RelationshipManager<CatalystSimple | Catalyst>
+                            title="Linked Catalysts"
+                            linkedItems={char.catalysts || []}
+                            availableItems={allCatalysts || []}
+                            isLoadingAvailable={isLoadingCatalysts}
+                            getItemName={(item) => item.name}
+                            getItemSecondary={(item) => item.storage_location || ''}
+                            itemLinkPrefix="/catalysts"
+                            onAdd={(catalystId) =>
+                                addCatalystMutation.mutate({ characterizationId: char.id, catalystId })
+                            }
+                            onRemove={(catalystId) =>
+                                removeCatalystMutation.mutate({ characterizationId: char.id, catalystId })
+                            }
+                            isPending={addCatalystMutation.isPending || removeCatalystMutation.isPending}
+                            emptyMessage="This characterization is not linked to any catalysts."
+                        />
+                    </div>
+
+                    {/* Samples Relationship Manager */}
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <RelationshipManager<SampleSimple | Sample>
+                            title="Linked Samples"
+                            linkedItems={char.samples || []}
+                            availableItems={allSamples || []}
+                            isLoadingAvailable={isLoadingSamples}
+                            getItemName={(item) => item.name}
+                            getItemSecondary={(item) => item.storage_location || ''}
+                            itemLinkPrefix="/samples"
+                            onAdd={(sampleId) =>
+                                addSampleMutation.mutate({ characterizationId: char.id, sampleId })
+                            }
+                            onRemove={(sampleId) =>
+                                removeSampleMutation.mutate({ characterizationId: char.id, sampleId })
+                            }
+                            isPending={addSampleMutation.isPending || removeSampleMutation.isPending}
+                            emptyMessage="This characterization is not linked to any samples."
+                        />
+                    </div>
+                </div>
+
+                {/* Sidebar */}
+                <div>
+                    {/* Metadata */}
+                    <div className="card">
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                            Details
+                        </h2>
+                        <dl style={{ margin: 0 }}>
+                            <div style={{ marginBottom: 'var(--spacing-sm)' }}>
+                                <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Type
+                                </dt>
+                                <dd style={{ margin: 0, fontWeight: 500 }}>
+                                    {typeLabel}
+                                </dd>
+                            </div>
+                            <div style={{ marginBottom: 'var(--spacing-sm)' }}>
+                                <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Created
+                                </dt>
+                                <dd style={{ margin: 0 }}>
+                                    {format(new Date(char.created_at), 'MMMM d, yyyy \'at\' h:mm a')}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Last Updated
+                                </dt>
+                                <dd style={{ margin: 0 }}>
+                                    {format(new Date(char.updated_at), 'MMMM d, yyyy \'at\' h:mm a')}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+
+                    {/* Summary Stats */}
+                    <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--spacing-md)' }}>
+                            Summary
+                        </h2>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{char.catalyst_count ?? char.catalysts?.length ?? 0}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Catalysts</div>
+                            </div>
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{char.sample_count ?? char.samples?.length ?? 0}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Samples</div>
+                            </div>
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{(char.has_raw_data ? 1 : 0) + (char.has_processed_data ? 1 : 0)}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Files</div>
+                            </div>
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-sm)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--border-radius)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{char.users?.length ?? 0}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Researchers</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Users/Researchers Relationship Manager */}
+                    <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                        <RelationshipManager<UserSimple | User>
+                            title="Researchers"
+                            linkedItems={char.users || []}
+                            availableItems={allUsers || []}
+                            isLoadingAvailable={isLoadingUsers}
+                            getItemName={(item) => item.full_name || ('username' in item ? item.username : '')}
+                            getItemSecondary={(item) => ('email' in item ? item.email : item.username)}
+                            getItemBadge={(item) => ('is_active' in item && !item.is_active) ? { label: 'Inactive', variant: 'neutral' } : null}
+                            itemLinkPrefix="/users"
+                            onAdd={(userId) =>
+                                addUserMutation.mutate({ characterizationId: char.id, userId })
+                            }
+                            onRemove={(userId) =>
+                                removeUserMutation.mutate({ characterizationId: char.id, userId })
+                            }
+                            isPending={addUserMutation.isPending || removeUserMutation.isPending}
+                            emptyMessage="No researchers recorded for this characterization."
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     );

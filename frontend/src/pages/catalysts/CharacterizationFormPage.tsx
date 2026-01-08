@@ -1,7 +1,7 @@
 /**
  * CharacterizationFormPage - Form for creating and editing characterizations.
  *
- * Handles the polymorphic characterization_type field and optional relationships
+ * Handles the type_name field and optional relationships
  * to files, performers, and linked materials.
  */
 
@@ -15,7 +15,7 @@ import {
 } from '@/hooks/useCharacterizations';
 import { useUsers } from '@/hooks/useUsers';
 import { useFiles } from '@/hooks/useFiles';
-import { FormField, TextInput, TextArea, Select, Button } from '@/components/common';
+import { FormField, TextArea, Select, Button } from '@/components/common';
 import {
     type CharacterizationCreate,
     type CharacterizationUpdate,
@@ -44,7 +44,7 @@ export const CharacterizationFormPage: React.FC = () => {
     // Fetch existing characterization if editing
     const { data: char, isLoading: isLoadingChar } = useCharacterization(
         id ? parseInt(id) : undefined,
-        'performed_by,raw_data_file,processed_data_file'
+        'users,raw_data_file,processed_data_file'
     );
 
     // Fetch dropdown data
@@ -62,57 +62,78 @@ export const CharacterizationFormPage: React.FC = () => {
         formState: { errors, isSubmitting },
         reset,
         watch,
+        setValue,
     } = useForm<CharacterizationCreate>({
         defaultValues: {
-            name: '',
-            characterization_type: 'XRD',
-            performed_by_id: undefined,
-            performed_at: '',
-            equipment_used: '',
-            conditions: '',
-            raw_data_file_id: undefined,
-            processed_data_file_id: undefined,
-            notes: '',
+            type_name: 'XRD',
+            description: '',
+            raw_data_id: undefined,
+            processed_data_id: undefined,
+            catalyst_ids: prefilledCatalystId ? [parseInt(prefilledCatalystId)] : undefined,
+            sample_ids: prefilledSampleId ? [parseInt(prefilledSampleId)] : undefined,
+            user_ids: [],
         },
     });
 
     // Watch the type for potential type-specific fields
-    const selectedType = watch('characterization_type');
+    const selectedType = watch('type_name') as CharacterizationType;
+    const selectedUserIds = watch('user_ids');
+
+    const handleUserSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const userId = parseInt(e.target.value);
+        if (userId && !selectedUserIds?.includes(userId)) {
+            setValue('user_ids', [...(selectedUserIds || []), userId]);
+        }
+        e.target.value = '';
+    };
+
+    const removeUser = (userId: number) => {
+        setValue('user_ids', (selectedUserIds || []).filter(id => id !== userId));
+    };
 
     // Pre-populate form when editing
     useEffect(() => {
         if (char) {
             reset({
-                name: char.name,
-                characterization_type: char.characterization_type,
-                performed_by_id: char.performed_by_id,
-                performed_at: char.performed_at ? char.performed_at.split('T')[0] : '',
-                equipment_used: char.equipment_used || '',
-                conditions: char.conditions || '',
-                raw_data_file_id: char.raw_data_file_id,
-                processed_data_file_id: char.processed_data_file_id,
-                notes: char.notes || '',
+                type_name: char.type_name,
+                description: char.description || '',
+                raw_data_id: char.raw_data_id,
+                processed_data_id: char.processed_data_id,
+                user_ids: char.users?.map(u => u.id) || [],
             });
         }
     }, [char, reset]);
 
     const onSubmit = async (data: CharacterizationCreate) => {
-        // Clean up empty strings to undefined
+        // Clean up empty strings/arrays to undefined
         const cleanData: CharacterizationCreate = {
             ...data,
-            performed_at: data.performed_at || undefined,
-            equipment_used: data.equipment_used || undefined,
-            conditions: data.conditions || undefined,
-            notes: data.notes || undefined,
+            description: data.description || undefined,
+            user_ids: data.user_ids?.length ? data.user_ids : undefined,
         };
 
+        // Add prefilled relationships for new characterizations
+        if (!isEditing) {
+            if (prefilledCatalystId) {
+                cleanData.catalyst_ids = [parseInt(prefilledCatalystId)];
+            }
+            if (prefilledSampleId) {
+                cleanData.sample_ids = [parseInt(prefilledSampleId)];
+            }
+        }
+
         if (isEditing && char) {
-            const updateData: CharacterizationUpdate = cleanData;
+            const updateData: CharacterizationUpdate = {
+                type_name: cleanData.type_name,
+                description: cleanData.description,
+                raw_data_id: cleanData.raw_data_id,
+                processed_data_id: cleanData.processed_data_id,
+                user_ids: cleanData.user_ids,
+            };
             updateMutation.mutate(
                 { id: char.id, data: updateData },
                 {
                     onSuccess: async (updated) => {
-                        // TODO: If prefilled sample/catalyst, link after create
                         navigate(`/characterizations/${updated.id}`);
                     },
                 }
@@ -120,8 +141,6 @@ export const CharacterizationFormPage: React.FC = () => {
         } else {
             createMutation.mutate(cleanData, {
                 onSuccess: async (newChar) => {
-                    // Note: Linking to sample/catalyst would happen here
-                    // For now, navigate to the new characterization
                     navigate(`/characterizations/${newChar.id}`);
                 },
             });
@@ -172,33 +191,17 @@ export const CharacterizationFormPage: React.FC = () => {
 
             <div className="card" style={{ maxWidth: '700px' }}>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    {/* Name */}
-                    <FormField
-                        label="Name"
-                        error={errors.name?.message}
-                        required
-                    >
-                        <TextInput
-                            {...register('name', {
-                                required: 'Name is required',
-                                minLength: { value: 1, message: 'Name cannot be empty' },
-                            })}
-                            placeholder="e.g., XRD Analysis - Pt-TiO2 Sample 001"
-                            hasError={!!errors.name}
-                        />
-                    </FormField>
-
-                    {/* Characterization Type */}
+                    {/* Type Name (Characterization Type) */}
                     <FormField
                         label="Characterization Type"
-                        error={errors.characterization_type?.message}
+                        error={errors.type_name?.message}
                         required
                     >
                         <Select
-                            {...register('characterization_type', {
+                            {...register('type_name', {
                                 required: 'Type is required',
                             })}
-                            hasError={!!errors.characterization_type}
+                            hasError={!!errors.type_name}
                         >
                             {CHARACTERIZATION_TYPES.map((type) => (
                                 <option key={type} value={type}>
@@ -214,58 +217,68 @@ export const CharacterizationFormPage: React.FC = () => {
                         {getTypeDescription(selectedType)}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
-                        {/* Performed By */}
-                        <FormField
-                            label="Performed By"
-                            error={errors.performed_by_id?.message}
-                        >
-                            <Select
-                                {...register('performed_by_id', {
-                                    setValueAs: (v) => (v === '' ? undefined : parseInt(v)),
-                                })}
-                            >
-                                <option value="">Select researcher...</option>
-                                {users?.map((user) => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.full_name || user.username}
-                                    </option>
-                                ))}
-                            </Select>
-                        </FormField>
-
-                        {/* Date Performed */}
-                        <FormField
-                            label="Date Performed"
-                            error={errors.performed_at?.message}
-                        >
-                            <TextInput
-                                type="date"
-                                {...register('performed_at')}
-                            />
-                        </FormField>
-                    </div>
-
-                    {/* Equipment Used */}
+                    {/* Description (includes conditions, equipment, notes) */}
                     <FormField
-                        label="Equipment Used"
-                        error={errors.equipment_used?.message}
+                        label="Description"
+                        error={errors.description?.message}
                     >
-                        <TextInput
-                            {...register('equipment_used')}
-                            placeholder="e.g., Bruker D8 Advance, JEOL JEM-2100"
+                        <TextArea
+                            {...register('description')}
+                            placeholder="Include equipment used, measurement conditions, and any additional notes. e.g., Bruker D8 Advance, Cu Kα radiation, 2θ = 10-80°, 0.02°/step"
+                            rows={4}
                         />
                     </FormField>
 
-                    {/* Conditions */}
+                    {/* Performed By (Users) */}
                     <FormField
-                        label="Measurement Conditions"
-                        error={errors.conditions?.message}
+                        label="Performed By"
+                        error={errors.user_ids?.message}
                     >
-                        <TextInput
-                            {...register('conditions')}
-                            placeholder="e.g., 40kV, 40mA, Cu Kα radiation, 2θ = 10-80°"
-                        />
+                        <Select onChange={handleUserSelect} value="">
+                            <option value="">Add a researcher...</option>
+                            {users?.filter(u => !selectedUserIds?.includes(u.id)).map((user) => (
+                                <option key={user.id} value={user.id}>
+                                    {user.full_name || user.username}
+                                </option>
+                            ))}
+                        </Select>
+                        {selectedUserIds && selectedUserIds.length > 0 && (
+                            <div style={{ display: 'flex', gap: 'var(--spacing-xs)', flexWrap: 'wrap', marginTop: 'var(--spacing-sm)' }}>
+                                {selectedUserIds.map(userId => {
+                                    const user = users?.find(u => u.id === userId);
+                                    return (
+                                        <span
+                                            key={userId}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--spacing-xs)',
+                                                padding: '0.25rem 0.5rem',
+                                                backgroundColor: 'var(--color-bg-secondary)',
+                                                borderRadius: 'var(--border-radius)',
+                                                fontSize: '0.875rem',
+                                            }}
+                                        >
+                                            {user?.full_name || user?.username || `User ${userId}`}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeUser(userId)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    padding: 0,
+                                                    fontSize: '1rem',
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                x
+                                            </button>
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </FormField>
 
                     {/* Data Files Section */}
@@ -279,10 +292,10 @@ export const CharacterizationFormPage: React.FC = () => {
                         {/* Raw Data File */}
                         <FormField
                             label="Raw Data File"
-                            error={errors.raw_data_file_id?.message}
+                            error={errors.raw_data_id?.message}
                         >
                             <Select
-                                {...register('raw_data_file_id', {
+                                {...register('raw_data_id', {
                                     setValueAs: (v) => (v === '' ? undefined : parseInt(v)),
                                 })}
                             >
@@ -298,10 +311,10 @@ export const CharacterizationFormPage: React.FC = () => {
                         {/* Processed Data File */}
                         <FormField
                             label="Processed Data File"
-                            error={errors.processed_data_file_id?.message}
+                            error={errors.processed_data_id?.message}
                         >
                             <Select
-                                {...register('processed_data_file_id', {
+                                {...register('processed_data_id', {
                                     setValueAs: (v) => (v === '' ? undefined : parseInt(v)),
                                 })}
                             >
@@ -314,18 +327,6 @@ export const CharacterizationFormPage: React.FC = () => {
                             </Select>
                         </FormField>
                     </div>
-
-                    {/* Notes */}
-                    <FormField
-                        label="Notes"
-                        error={errors.notes?.message}
-                    >
-                        <TextArea
-                            {...register('notes')}
-                            placeholder="Additional observations, analysis notes, or findings..."
-                            rows={4}
-                        />
-                    </FormField>
 
                     {/* Form Actions */}
                     <div style={{ display: 'flex', gap: 'var(--spacing-sm)', justifyContent: 'flex-end', marginTop: 'var(--spacing-lg)' }}>

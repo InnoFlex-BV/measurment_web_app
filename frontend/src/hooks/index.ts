@@ -39,6 +39,13 @@ export {
     // These override the ones from useCatalysts - they call characterization API endpoints
     useAddCharacterizationToCatalyst,
     useRemoveCharacterizationFromCatalyst,
+    // New hooks for managing relationships from characterization side
+    useAddCatalystToCharacterization,
+    useRemoveCatalystFromCharacterization,
+    useAddSampleToCharacterization,
+    useRemoveSampleFromCharacterization,
+    useAddUserToCharacterization,
+    useRemoveUserFromCharacterization,
 } from './useCharacterizations';
 
 export {

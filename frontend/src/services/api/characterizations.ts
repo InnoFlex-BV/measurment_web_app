@@ -111,6 +111,52 @@ export const removeFromSample = async (
     await apiClient.delete(`/api/samples/${sampleId}/characterizations/${characterizationId}`);
 };
 
+/**
+ * Add a catalyst to this characterization.
+ * Uses the characterization API endpoint.
+ */
+export const addCatalyst = async (characterizationId: number, catalystId: number): Promise<void> => {
+    await apiClient.post(`/api/characterizations/${characterizationId}/catalysts/${catalystId}`);
+};
+
+/**
+ * Remove a catalyst from this characterization.
+ * Uses the characterization API endpoint.
+ */
+export const removeCatalyst = async (characterizationId: number, catalystId: number): Promise<void> => {
+    await apiClient.delete(`/api/characterizations/${characterizationId}/catalysts/${catalystId}`);
+};
+
+/**
+ * Add a sample to this characterization.
+ * Uses the characterization API endpoint.
+ */
+export const addSample = async (characterizationId: number, sampleId: number): Promise<void> => {
+    await apiClient.post(`/api/characterizations/${characterizationId}/samples/${sampleId}`);
+};
+
+/**
+ * Remove a sample from this characterization.
+ * Uses the characterization API endpoint.
+ */
+export const removeSample = async (characterizationId: number, sampleId: number): Promise<void> => {
+    await apiClient.delete(`/api/characterizations/${characterizationId}/samples/${sampleId}`);
+};
+
+/**
+ * Add a user to this characterization.
+ */
+export const addUser = async (characterizationId: number, userId: number): Promise<void> => {
+    await apiClient.post(`/api/characterizations/${characterizationId}/users/${userId}`);
+};
+
+/**
+ * Remove a user from this characterization.
+ */
+export const removeUser = async (characterizationId: number, userId: number): Promise<void> => {
+    await apiClient.delete(`/api/characterizations/${characterizationId}/users/${userId}`);
+};
+
 export default {
     list,
     get,
@@ -121,4 +167,10 @@ export default {
     removeFromCatalyst,
     addToSample,
     removeFromSample,
+    addCatalyst,
+    removeCatalyst,
+    addSample,
+    removeSample,
+    addUser,
+    removeUser,
 };

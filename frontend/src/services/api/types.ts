@@ -347,54 +347,50 @@ export const CHARACTERIZATION_TYPE_LABELS: Record<CharacterizationType, string> 
 
 export interface CharacterizationSimple {
     id: number;
-    name: string;
-    characterization_type: CharacterizationType;
-    performed_at?: string;
+    type_name: string;
+    description?: string;
+    created_at: string;
 }
 
 export interface Characterization {
     id: number;
-    name: string;
-    characterization_type: CharacterizationType;
-    performed_by_id?: number;
-    performed_at?: string;
-    equipment_used?: string;
-    conditions?: string;
-    raw_data_file_id?: number;
-    processed_data_file_id?: number;
-    notes?: string;
+    type_name: string;
+    description?: string;
+    raw_data_id?: number;
+    processed_data_id?: number;
     created_at: string;
     updated_at: string;
+    // Computed properties
+    has_raw_data?: boolean;
+    has_processed_data?: boolean;
+    catalyst_count?: number;
+    sample_count?: number;
     // Optional nested data
-    performed_by?: UserSimple;
     raw_data_file?: FileMetadataSimple;
     processed_data_file?: FileMetadataSimple;
     catalysts?: CatalystSimple[];
     samples?: SampleSimple[];
+    users?: UserSimple[];
 }
 
 export interface CharacterizationCreate {
-    name: string;
-    characterization_type: CharacterizationType;
-    performed_by_id?: number;
-    performed_at?: string;
-    equipment_used?: string;
-    conditions?: string;
-    raw_data_file_id?: number;
-    processed_data_file_id?: number;
-    notes?: string;
+    type_name: string;
+    description?: string;
+    raw_data_id?: number;
+    processed_data_id?: number;
+    catalyst_ids?: number[];
+    sample_ids?: number[];
+    user_ids?: number[];
 }
 
 export interface CharacterizationUpdate {
-    name?: string;
-    characterization_type?: CharacterizationType;
-    performed_by_id?: number;
-    performed_at?: string;
-    equipment_used?: string;
-    conditions?: string;
-    raw_data_file_id?: number;
-    processed_data_file_id?: number;
-    notes?: string;
+    type_name?: string;
+    description?: string;
+    raw_data_id?: number;
+    processed_data_id?: number;
+    catalyst_ids?: number[];
+    sample_ids?: number[];
+    user_ids?: number[];
 }
 
 // ============================================================================
@@ -1130,8 +1126,10 @@ export interface SampleListParams extends PaginationParams {
 
 export interface CharacterizationListParams extends PaginationParams {
     search?: string;
-    characterization_type?: CharacterizationType;
-    performed_by?: number;
+    type_name?: string;
+    catalyst_id?: number;
+    sample_id?: number;
+    has_data?: boolean;
     include?: string;
 }
 

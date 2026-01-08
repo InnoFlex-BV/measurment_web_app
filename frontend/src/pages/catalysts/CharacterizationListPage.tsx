@@ -1,15 +1,14 @@
 /**
  * CharacterizationListPage - List view for all characterizations.
  *
- * Displays characterization records with filtering by type, performer,
- * and search. Each characterization type (XRD, BET, TEM, etc.) represents
+ * Displays characterization records with filtering by type and search.
+ * Each characterization type (XRD, BET, TEM, etc.) represents
  * a different analytical measurement technique.
  */
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCharacterizations, useDeleteCharacterization } from '@/hooks/useCharacterizations';
-import { useUsers } from '@/hooks/useUsers';
 import { Button, TextInput, Select, Badge } from '@/components/common';
 import {
     type Characterization,
@@ -29,7 +28,7 @@ const CHARACTERIZATION_TYPES: CharacterizationType[] = [
 /**
  * Get badge color based on characterization type category
  */
-function getTypeBadgeVariant(type: CharacterizationType): 'info' | 'success' | 'warning' | 'neutral' {
+function getTypeBadgeVariant(type: string): 'info' | 'success' | 'warning' | 'neutral' {
     // Imaging techniques
     if (['TEM', 'SEM'].includes(type)) return 'info';
     // Surface analysis
@@ -43,21 +42,19 @@ export const CharacterizationListPage: React.FC = () => {
     // Filter state
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState<CharacterizationType | ''>('');
-    const [performedBy, setPerformedBy] = useState<number | undefined>(undefined);
 
     // Data fetching
     const { data: characterizations, isLoading, error } = useCharacterizations({
         search: search || undefined,
-        characterization_type: typeFilter || undefined,
-        performed_by: performedBy,
-        include: 'performed_by,catalysts,samples',
+        type_name: typeFilter || undefined,
+        include: 'users,catalysts,samples',
     });
 
-    const { data: users } = useUsers({ is_active: true });
     const deleteMutation = useDeleteCharacterization();
 
     const handleDelete = (char: Characterization) => {
-        if (window.confirm(`Are you sure you want to delete characterization "${char.name}"?`)) {
+        const typeLabel = CHARACTERIZATION_TYPE_LABELS[char.type_name as CharacterizationType] || char.type_name;
+        if (window.confirm(`Are you sure you want to delete this ${typeLabel} characterization (#${char.id})?`)) {
             deleteMutation.mutate(char.id);
         }
     };
@@ -82,7 +79,7 @@ export const CharacterizationListPage: React.FC = () => {
                         <label className="form-label">Search</label>
                         <TextInput
                             type="text"
-                            placeholder="Search by name..."
+                            placeholder="Search by description..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -97,20 +94,6 @@ export const CharacterizationListPage: React.FC = () => {
                             {CHARACTERIZATION_TYPES.map((type) => (
                                 <option key={type} value={type}>
                                     {CHARACTERIZATION_TYPE_LABELS[type]}
-                                </option>
-                            ))}
-                        </Select>
-                    </div>
-                    <div>
-                        <label className="form-label">Performed By</label>
-                        <Select
-                            value={performedBy ?? ''}
-                            onChange={(e) => setPerformedBy(e.target.value ? parseInt(e.target.value) : undefined)}
-                        >
-                            <option value="">All Users</option>
-                            {users?.map((user) => (
-                                <option key={user.id} value={user.id}>
-                                    {user.full_name || user.username}
                                 </option>
                             ))}
                         </Select>
@@ -147,10 +130,10 @@ export const CharacterizationListPage: React.FC = () => {
                                 <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                                     <thead>
                                     <tr style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Name</th>
                                         <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Type</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Performed By</th>
-                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Date</th>
+                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Description</th>
+                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Researchers</th>
+                                        <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Created</th>
                                         <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'left' }}>Links</th>
                                         <th style={{ padding: 'var(--spacing-sm) var(--spacing-md)', textAlign: 'right' }}>Actions</th>
                                     </tr>
@@ -161,27 +144,62 @@ export const CharacterizationListPage: React.FC = () => {
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
                                                 <Link
                                                     to={`/characterizations/${char.id}`}
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    <Badge variant={getTypeBadgeVariant(char.type_name)} size="sm">
+                                                        {char.type_name}
+                                                    </Badge>
+                                                </Link>
+                                            </td>
+                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', maxWidth: '300px' }}>
+                                                <Link
+                                                    to={`/characterizations/${char.id}`}
                                                     style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}
                                                 >
-                                                    {char.name}
+                                                    {char.description ? (
+                                                        <span style={{
+                                                            display: 'block',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                        }}>
+                                                            {char.description}
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                                                            {CHARACTERIZATION_TYPE_LABELS[char.type_name as CharacterizationType] || char.type_name} #{char.id}
+                                                        </span>
+                                                    )}
                                                 </Link>
                                             </td>
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
-                                                <Badge variant={getTypeBadgeVariant(char.characterization_type)} size="sm">
-                                                    {char.characterization_type}
-                                                </Badge>
-                                            </td>
-                                            <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
-                                                {char.performed_by ? (
-                                                    <Link to={`/users/${char.performed_by.id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
-                                                        {char.performed_by.full_name || char.performed_by.username}
-                                                    </Link>
+                                                {char.users && char.users.length > 0 ? (
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                                                        {char.users.slice(0, 2).map((user) => (
+                                                            <Link
+                                                                key={user.id}
+                                                                to={`/users/${user.id}`}
+                                                                style={{
+                                                                    color: 'var(--color-primary)',
+                                                                    textDecoration: 'none',
+                                                                    fontSize: '0.875rem',
+                                                                }}
+                                                            >
+                                                                {user.full_name || user.username}
+                                                            </Link>
+                                                        ))}
+                                                        {char.users.length > 2 && (
+                                                            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                                                                +{char.users.length - 2} more
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
                                                 )}
                                             </td>
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                                {char.performed_at ? format(new Date(char.performed_at), 'MMM d, yyyy') : '—'}
+                                                {format(new Date(char.created_at), 'MMM d, yyyy')}
                                             </td>
                                             <td style={{ padding: 'var(--spacing-sm) var(--spacing-md)' }}>
                                                 <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>

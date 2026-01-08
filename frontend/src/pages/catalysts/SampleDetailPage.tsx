@@ -306,10 +306,11 @@ export const SampleDetailPage: React.FC = () => {
                         linkedItems={sample.characterizations || []}
                         availableItems={allCharacterizations || []}
                         isLoadingAvailable={isLoadingChars}
-                        getItemName={(item) => item.name}
-                        getItemSecondary={(item) => ('equipment_used' in item && item.equipment_used) || 'No equipment specified'}
+                        getItemName={(item) => item.type_name}
+                        getItemSecondary={(item) =>
+                            ('description' in item && item.description) ? item.description.toString().substring(0, 100) : ''}
                         getItemBadge={(item) => ({
-                            label: CHAR_TYPE_LABELS[item.characterization_type] || item.characterization_type,
+                            label: CHAR_TYPE_LABELS[item.type_name] || item.type_name,
                             variant: 'info',
                         })}
                         itemLinkPrefix="/characterizations"

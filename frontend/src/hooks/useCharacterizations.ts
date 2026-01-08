@@ -165,3 +165,145 @@ export function useRemoveCharacterizationFromCatalyst(): UseMutationResult<
         },
     });
 }
+
+// ============================================================================
+// Catalyst Relationship Hooks (from Characterization side)
+// ============================================================================
+
+/**
+ * Hook to add a catalyst to a characterization.
+ */
+export function useAddCatalystToCharacterization(): UseMutationResult<
+    void,
+    Error,
+    { characterizationId: number; catalystId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ characterizationId, catalystId }) =>
+            characterizationApi.addCatalyst(characterizationId, catalystId),
+        onSuccess: (_, { characterizationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: characterizationKeys.detail(characterizationId),
+            });
+            queryClient.invalidateQueries({ queryKey: ['catalysts'] });
+        },
+    });
+}
+
+/**
+ * Hook to remove a catalyst from a characterization.
+ */
+export function useRemoveCatalystFromCharacterization(): UseMutationResult<
+    void,
+    Error,
+    { characterizationId: number; catalystId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ characterizationId, catalystId }) =>
+            characterizationApi.removeCatalyst(characterizationId, catalystId),
+        onSuccess: (_, { characterizationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: characterizationKeys.detail(characterizationId),
+            });
+            queryClient.invalidateQueries({ queryKey: ['catalysts'] });
+        },
+    });
+}
+
+// ============================================================================
+// Sample Relationship Hooks (from Characterization side)
+// ============================================================================
+
+/**
+ * Hook to add a sample to a characterization.
+ */
+export function useAddSampleToCharacterization(): UseMutationResult<
+    void,
+    Error,
+    { characterizationId: number; sampleId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ characterizationId, sampleId }) =>
+            characterizationApi.addSample(characterizationId, sampleId),
+        onSuccess: (_, { characterizationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: characterizationKeys.detail(characterizationId),
+            });
+            queryClient.invalidateQueries({ queryKey: ['samples'] });
+        },
+    });
+}
+
+/**
+ * Hook to remove a sample from a characterization.
+ */
+export function useRemoveSampleFromCharacterization(): UseMutationResult<
+    void,
+    Error,
+    { characterizationId: number; sampleId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ characterizationId, sampleId }) =>
+            characterizationApi.removeSample(characterizationId, sampleId),
+        onSuccess: (_, { characterizationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: characterizationKeys.detail(characterizationId),
+            });
+            queryClient.invalidateQueries({ queryKey: ['samples'] });
+        },
+    });
+}
+
+// ============================================================================
+// User Relationship Hooks
+// ============================================================================
+
+/**
+ * Hook to add a user to a characterization.
+ */
+export function useAddUserToCharacterization(): UseMutationResult<
+    void,
+    Error,
+    { characterizationId: number; userId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ characterizationId, userId }) =>
+            characterizationApi.addUser(characterizationId, userId),
+        onSuccess: (_, { characterizationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: characterizationKeys.detail(characterizationId),
+            });
+        },
+    });
+}
+
+/**
+ * Hook to remove a user from a characterization.
+ */
+export function useRemoveUserFromCharacterization(): UseMutationResult<
+    void,
+    Error,
+    { characterizationId: number; userId: number }
+> {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ characterizationId, userId }) =>
+            characterizationApi.removeUser(characterizationId, userId),
+        onSuccess: (_, { characterizationId }) => {
+            queryClient.invalidateQueries({
+                queryKey: characterizationKeys.detail(characterizationId),
+            });
+        },
+    });
+}
